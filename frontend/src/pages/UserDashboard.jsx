@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, Ticket as TicketIcon, BookOpen, User as UserIcon, Plus } from 'lucide-react';
+import { Calendar, Ticket as TicketIcon, BookOpen, User as UserIcon, Plus, Trash2 } from 'lucide-react';
 import TicketList from '../components/tickets/TicketList';
 import TicketForm from '../components/tickets/TicketForm';
 
@@ -38,6 +38,27 @@ const UserDashboard = () => {
             console.error("Error fetching tickets:", error.response?.data || error.message);
         }
     };
+
+    const handleDeleteTicket = async (ticketId) => {
+        if (!window.confirm("Delete this ticket?")) return;
+        try {
+            await api.delete(`/tickets/${ticketId}`);
+            fetchTickets();
+        } catch (error) {
+            console.error("Failed to delete ticket", error);
+        }
+    };
+
+    const renderUserActions = (ticket) => (
+        <button 
+            onClick={() => handleDeleteTicket(ticket.id)} 
+            className="btn btn-outline btn-sm" 
+            style={{ color: 'var(--danger)', padding: '0.4rem' }}
+        >
+            <Trash2 size={14} style={{ marginRight: '4px' }} />
+            Delete
+        </button>
+    );
 
     const fetchData = async () => {
         try {
@@ -209,7 +230,7 @@ const UserDashboard = () => {
                     <div className="message-box">
                         {data || "No data received from server."}
                     </div>
-                    <TicketList tickets={tickets} />
+                    <TicketList tickets={tickets} renderActions={renderUserActions} />
                 </div>
             </div>
 

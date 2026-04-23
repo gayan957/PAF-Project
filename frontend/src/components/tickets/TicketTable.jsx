@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye } from 'lucide-react';
 
-const TicketTable = ({ tickets }) => {
+const TicketTable = ({ tickets, renderActions }) => {
     const navigate = useNavigate();
 
     const getStatusClass = (status) => {
@@ -24,7 +24,7 @@ const TicketTable = ({ tickets }) => {
                         <th style={{ padding: '1rem' }}>Priority</th>
                         <th style={{ padding: '1rem' }}>Status</th>
                         <th style={{ padding: '1rem' }}>Created</th>
-                        <th style={{ padding: '1rem', textAlign: 'right' }}>Action</th>
+                        <th style={{ padding: '1rem', textAlign: 'right' }}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -55,7 +55,7 @@ const TicketTable = ({ tickets }) => {
                             <td style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                                 {new Date(ticket.createdAt).toLocaleDateString()}
                             </td>
-                            <td style={{ padding: '1rem', textAlign: 'right' }}>
+                            <td style={{ padding: '1rem', textAlign: 'right', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center' }}>
                                 <button 
                                     onClick={() => navigate(`/tickets/${ticket.id}`)}
                                     className="btn-icon-sm"
@@ -63,6 +63,7 @@ const TicketTable = ({ tickets }) => {
                                 >
                                     <Eye size={18} />
                                 </button>
+                                {renderActions && renderActions(ticket)}
                             </td>
                         </tr>
                     ))}
