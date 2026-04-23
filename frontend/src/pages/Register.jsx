@@ -1,9 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 
 const Register = () => {
     const navigate = useNavigate();
+    const { user, checkAuth } = useAuth();
+
+    useEffect(() => {
+        if (user) {
+            switch (user.role) {
+                case 'ROLE_ADMIN':
+                    navigate('/admin-dashboard');
+                    break;
+                case 'ROLE_TECHNICIAN':
+                    navigate('/technician-dashboard');
+                    break;
+                case 'ROLE_USER':
+                default:
+                    navigate('/user-dashboard');
+                    break;
+            }
+        }
+    }, [user, navigate]);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -24,9 +43,10 @@ const Register = () => {
         setLoading(true);
 
         try {
-            await axios.post('http://localhost:8080/api/auth/register', formData);
-            // On success, redirect to login page
-            navigate('/login');
+            await api.post('/auth/register', formData);
+            // On success, automatically log in
+            await api.post('/auth/login', { email: formData.email, password: formData.password });
+            await checkAuth(); // Refresh the user context, which will trigger the useEffect redirection
         } catch (err) {
             setError(err.response?.data?.message || 'Registration failed. Please try again.');
         } finally {
