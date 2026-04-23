@@ -12,6 +12,8 @@ import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import TechnicianDashboard from './pages/TechnicianDashboard';
 import Unauthorized from './pages/Unauthorized';
+import TicketListPage from './pages/TicketListPage';
+import TicketDetailPage from './pages/TicketDetailPage';
 
 const Layout = ({ children }) => {
   return (
@@ -42,6 +44,11 @@ function App() {
           
           <Route element={<ProtectedRoute allowedRoles={['ROLE_TECHNICIAN']} />}>
             <Route path="/technician-dashboard" element={<Layout><TechnicianDashboard /></Layout>} />
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={['ROLE_USER', 'ROLE_ADMIN', 'ROLE_TECHNICIAN']} />}>
+            <Route path="/tickets" element={<Layout><TicketListPage /></Layout>} />
+            <Route path="/tickets/:id" element={<Layout><TicketDetailPage /></Layout>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

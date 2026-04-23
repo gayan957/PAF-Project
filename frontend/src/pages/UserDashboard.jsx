@@ -40,7 +40,7 @@ const UserDashboard = () => {
                 setLoading(false);
             }
         } catch (error) {
-            console.error("Error fetching tickets", error);
+            console.error("Error fetching tickets:", error.response?.data || error.message);
         } finally {
             setLoading(false);
         }
