@@ -29,7 +29,19 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
-        String avatarUrl = oAuth2User.getAttribute("picture");
+        String avatarUrl = oAuth2User.getAttribute("picture"); // Google
+        
+        // GitHub specific attributes
+        if (avatarUrl == null) {
+            avatarUrl = oAuth2User.getAttribute("avatar_url");
+        }
+        if (name == null) {
+            name = oAuth2User.getAttribute("login");
+        }
+        if (email == null) {
+            String login = oAuth2User.getAttribute("login");
+            email = login + "@github.com";
+        }
 
         Optional<User> userOptional = userRepository.findByEmail(email);
         
@@ -46,9 +58,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             user = userOptional.get();
         }
 
+        java.util.Map<String, Object> attributes = new java.util.HashMap<>(oAuth2User.getAttributes());
+        attributes.put("email", email);
+
         return new DefaultOAuth2User(
                 Collections.singletonList(new SimpleGrantedAuthority(user.getRole().name())),
-                oAuth2User.getAttributes(),
+                attributes,
                 "email" // Using email as the primary key/name attribute for the principal
         );
     }
