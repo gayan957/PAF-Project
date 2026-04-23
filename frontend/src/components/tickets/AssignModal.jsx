@@ -8,14 +8,18 @@ const AssignModal = ({ ticket, technicians, onSuccess, onClose }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!technicianId) {
+            alert("Please select a technician.");
+            return;
+        }
         setLoading(true);
         try {
-            await api.patch(`/tickets/${ticket.id}/assign`, { technicianId });
+            await api.patch(`/tickets/${ticket.id}/assign`, { technicianId: parseInt(technicianId, 10) });
             onSuccess();
             onClose();
         } catch (error) {
-            console.error("Error assigning technician", error);
-            alert("Failed to assign technician");
+            console.error("Error assigning technician:", error.response?.data || error.message);
+            alert("Failed to assign technician: " + (error.response?.data?.message || error.message));
         } finally {
             setLoading(false);
         }

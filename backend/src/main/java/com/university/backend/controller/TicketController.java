@@ -78,8 +78,8 @@ public class TicketController {
     }
 
     @PatchMapping("/{id}/assign")
-    public ResponseEntity<Ticket> assignTechnician(@PathVariable Long id, @RequestBody Map<String, Long> request) {
-        Long technicianId = request.get("technicianId");
+    public ResponseEntity<Ticket> assignTechnician(@PathVariable Long id, @RequestBody Map<String, Object> request) {
+        Long technicianId = Long.parseLong(request.get("technicianId").toString());
         return ResponseEntity.ok(ticketService.assignTechnician(id, technicianId));
     }
 
