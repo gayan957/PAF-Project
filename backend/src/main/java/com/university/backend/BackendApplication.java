@@ -12,8 +12,3 @@ public class BackendApplication {
 
 }
 
-// <dependency>
-// 			<groupId>com.h2database</groupId>
-// 			<artifactId>h2</artifactId>
-// 			<scope>runtime</scope>
-// 		</dependency>
