@@ -78,6 +78,7 @@ body {
   color: #333;
   gap: 0.75rem;
   font-weight: 600;
+  border: 1px solid #cbd5e1;
 }
 
 .btn-google:hover {
@@ -159,8 +160,26 @@ body {
 /* Page Layouts */
 .page-container {
   flex: 1;
-  padding: 3rem 0;
+  padding: 2rem;
   animation: fadeIn 0.4s ease-out;
+}
+
+.portal-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc; /* Light background for the portal */
+}
+
+.portal-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+.portal-content {
+  flex: 1;
+  overflow-y: auto;
 }
 
 /* Login Page */
@@ -168,41 +187,58 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  background: radial-gradient(circle at top right, #1e1b4b, var(--bg-dark));
+  min-height: calc(100vh - 80px); /* Account for navbar height */
+  background-color: #f8fafc;
+  background-image: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
 
 .login-card {
-  max-width: 400px;
+  max-width: 450px;
   width: 100%;
-  padding: 3rem 2rem;
+  padding: 3rem 2.5rem;
   text-align: center;
   position: relative;
-  overflow: hidden;
+  background: #ffffff;
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  border: 1px solid #e2e8f0;
 }
 
-.login-card::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: conic-gradient(transparent, var(--primary), transparent 30%);
-  animation: rotate 4s linear infinite;
-  z-index: -1;
-  opacity: 0.1;
+/* Override glass panel for login explicitly */
+.login-card.glass-panel {
+  background: #ffffff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .login-title {
   font-size: 2rem;
   margin-bottom: 0.5rem;
-  font-weight: 700;
+  font-weight: 800;
+  color: #0f172a;
 }
 
 .login-subtitle {
-  color: var(--text-muted);
+  color: #64748b;
   margin-bottom: 2.5rem;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #cbd5e1;
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 /* Dashboard */
