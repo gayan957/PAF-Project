@@ -32,6 +32,21 @@ public class User {
 
     private String avatarUrl;
 
+    private String mobile;
+
+    private String nic;
+
+    private String password;
+
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    public String getMobile() { return mobile; }
+    public void setMobile(String mobile) { this.mobile = mobile; }
+
+    public String getNic() { return nic; }
+    public void setNic(String nic) { this.nic = nic; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 }

@@ -7,6 +7,7 @@ import Navbar from './components/Navbar';
 // Pages
 import Home from './pages/Home';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import TechnicianDashboard from './pages/TechnicianDashboard';
@@ -28,6 +29,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           
           <Route element={<ProtectedRoute allowedRoles={['ROLE_USER', 'ROLE_ADMIN', 'ROLE_TECHNICIAN']} />}>
