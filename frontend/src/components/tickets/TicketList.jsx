@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Clock, CheckCircle2, AlertCircle, User as UserIcon, MapPin, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import CommentSection from './CommentSection';
 
 const TicketList = ({ tickets, renderActions }) => {
     const [expandedTicketId, setExpandedTicketId] = useState(null);
+    const navigate = useNavigate();
+
     const getStatusIcon = (status) => {
         switch (status) {
             case 'OPEN': return <AlertCircle size={16} className="status-icon open" />;
@@ -34,7 +37,12 @@ const TicketList = ({ tickets, renderActions }) => {
     return (
         <div className="ticket-list">
             {tickets.map(ticket => (
-                <div key={ticket.id} className="glass-panel ticket-card">
+                <div 
+                    key={ticket.id} 
+                    className="glass-panel ticket-card"
+                    onClick={() => navigate(`/tickets/${ticket.id}`)}
+                    style={{ cursor: 'pointer' }}
+                >
                     <div className="ticket-card-header">
                         <span className="ticket-category">{ticket.category}</span>
                         <span className="ticket-id">#{ticket.id}</span>
@@ -98,7 +106,11 @@ const TicketList = ({ tickets, renderActions }) => {
                     )}
 
                     {renderActions && (
-                        <div className="ticket-actions" style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+                        <div 
+                            className="ticket-actions" 
+                            style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             {renderActions(ticket)}
                         </div>
                     )}
