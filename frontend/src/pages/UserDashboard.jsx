@@ -7,6 +7,7 @@ const UserDashboard = () => {
     const { user, checkAuth } = useAuth();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showForm, setShowForm] = useState(false);
 
     const [profileData, setProfileData] = useState({
         name: '',
@@ -38,9 +39,17 @@ const UserDashboard = () => {
             } finally {
                 setLoading(false);
             }
-        };
+        } catch (error) {
+            console.error("Error fetching tickets", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        fetchData();
+    useEffect(() => {
+        fetchTickets();
+        // Mocking other stats for now
+        setStats(prev => ({ ...prev, bookings: 1, courses: 5 }));
     }, []);
 
     const handleProfileChange = (e) => {
@@ -71,17 +80,24 @@ const UserDashboard = () => {
         <div className="page-container">
             <div className="container">
                 <div className="dashboard-header">
-                    <h1 className="dashboard-title">User Dashboard</h1>
+                    <div>
+                        <h1 className="dashboard-title">User Dashboard</h1>
+                        <p className="text-muted">Welcome back! Here's an overview of your activity.</p>
+                    </div>
+                    <button onClick={() => setShowForm(true)} className="btn btn-primary">
+                        <Plus size={18} style={{ marginRight: '8px' }} />
+                        New Ticket
+                    </button>
                 </div>
 
                 <div className="dashboard-grid">
                     <div className="glass-panel stat-card">
                         <div className="stat-icon">
-                            <Ticket size={24} />
+                            <TicketIcon size={24} />
                         </div>
                         <div className="stat-content">
                             <h3>Active Tickets</h3>
-                            <p>3</p>
+                            <p>{stats.active}</p>
                         </div>
                     </div>
                     <div className="glass-panel stat-card">
@@ -90,7 +106,7 @@ const UserDashboard = () => {
                         </div>
                         <div className="stat-content">
                             <h3>Upcoming Bookings</h3>
-                            <p>1</p>
+                            <p>{stats.bookings}</p>
                         </div>
                     </div>
                     <div className="glass-panel stat-card">
@@ -99,7 +115,7 @@ const UserDashboard = () => {
                         </div>
                         <div className="stat-content">
                             <h3>Courses</h3>
-                            <p>5</p>
+                            <p>{stats.courses}</p>
                         </div>
                     </div>
                 </div>
@@ -177,8 +193,16 @@ const UserDashboard = () => {
                     <div className="message-box">
                         {data || "No data received from server."}
                     </div>
+                    <TicketList tickets={tickets} />
                 </div>
             </div>
+
+            {showForm && (
+                <TicketForm 
+                    onSuccess={fetchTickets} 
+                    onClose={() => setShowForm(false)} 
+                />
+            )}
         </div>
     );
 };
