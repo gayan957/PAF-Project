@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import TicketTable from '../components/tickets/TicketTable';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import TicketForm from '../components/tickets/TicketForm';
 
 const TicketListPage = () => {
@@ -21,6 +21,27 @@ const TicketListPage = () => {
             setLoading(false);
         }
     };
+
+    const handleDeleteTicket = async (ticketId) => {
+        if (!window.confirm("Delete this ticket?")) return;
+        try {
+            await api.delete(`/tickets/${ticketId}`);
+            fetchTickets();
+        } catch (error) {
+            console.error("Failed to delete ticket", error);
+        }
+    };
+
+    const renderUserActions = (ticket) => (
+        <button 
+            onClick={() => handleDeleteTicket(ticket.id)} 
+            className="btn btn-outline btn-sm" 
+            style={{ color: 'var(--danger)', padding: '0.4rem' }}
+        >
+            <Trash2 size={14} style={{ marginRight: '4px' }} />
+            Delete
+        </button>
+    );
 
     useEffect(() => {
         fetchTickets();
@@ -42,7 +63,7 @@ const TicketListPage = () => {
                     </button>
                 </div>
 
-                <TicketTable tickets={tickets} />
+                <TicketTable tickets={tickets} renderActions={renderUserActions} />
             </div>
 
             {showForm && (
