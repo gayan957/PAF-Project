@@ -27,16 +27,32 @@ public class TicketController {
     private final TicketService ticketService;
     private final UserService userService;
 
+    private String extractEmail(Object principal) {
+        if (principal instanceof OAuth2User) {
+            return ((OAuth2User) principal).getAttribute("email");
+        } else if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
+            return ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+        }
+        throw new RuntimeException("Unable to determine user email from principal");
+    }
+
     @PostMapping
-    public ResponseEntity<Ticket> createTicket(@RequestBody TicketRequest request, @AuthenticationPrincipal OAuth2User principal) {
-        String email = principal.getAttribute("email");
+    public ResponseEntity<Ticket> createTicket(@RequestBody TicketRequest request, @AuthenticationPrincipal Object principal) {
+        String email = extractEmail(principal);
         User creator = userService.getUserByEmail(email);
         return ResponseEntity.ok(ticketService.createTicket(request, creator));
     }
 
     @GetMapping
-    public ResponseEntity<List<Ticket>> getAllTickets() {
-        return ResponseEntity.ok(ticketService.getAllTickets());
+    public ResponseEntity<List<Ticket>> getAllTickets(@AuthenticationPrincipal Object principal) {
+        String email = extractEmail(principal);
+        User user = userService.getUserByEmail(email);
+        
+        if (user.getRole().name().equals("ROLE_ADMIN") || user.getRole().name().equals("ROLE_TECHNICIAN")) {
+            return ResponseEntity.ok(ticketService.getAllTickets());
+        } else {
+            return ResponseEntity.ok(ticketService.getTicketsByUser(user));
+        }
     }
 
     @GetMapping("/{id}")

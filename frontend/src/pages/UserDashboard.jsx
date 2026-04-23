@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, Ticket, BookOpen, User as UserIcon } from 'lucide-react';
+import { Calendar, Ticket as TicketIcon, BookOpen, User as UserIcon, Plus } from 'lucide-react';
+import TicketList from '../components/tickets/TicketList';
+import TicketForm from '../components/tickets/TicketForm';
 
 const UserDashboard = () => {
     const { user, checkAuth } = useAuth();
     const [data, setData] = useState(null);
+    const [tickets, setTickets] = useState([]);
+    const [stats, setStats] = useState({ active: 0, bookings: 0, courses: 0 });
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
 
@@ -17,6 +21,34 @@ const UserDashboard = () => {
     });
     const [updateMessage, setUpdateMessage] = useState({ text: '', type: '' });
     const [updating, setUpdating] = useState(false);
+
+    const fetchTickets = async () => {
+        try {
+            const response = await api.get('/tickets');
+            if (response.data && Array.isArray(response.data)) {
+                setTickets(response.data);
+                setStats(prev => ({ 
+                    ...prev, 
+                    active: response.data.filter(t => t.status !== 'RESOLVED').length 
+                }));
+            } else {
+                setTickets([]);
+            }
+        } catch (error) {
+            console.error("Error fetching tickets:", error.response?.data || error.message);
+        }
+    };
+
+    const fetchData = async () => {
+        try {
+            const response = await api.get('/dashboard/user');
+            setData(response.data);
+        } catch (error) {
+            console.error("Error fetching dashboard data", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (user) {
@@ -30,23 +62,7 @@ const UserDashboard = () => {
     }, [user]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await api.get('/dashboard/user');
-                setData(response.data);
-            } catch (error) {
-                console.error("Error fetching dashboard data", error);
-            } finally {
-                setLoading(false);
-            }
-        } catch (error) {
-            console.error("Error fetching tickets:", error.response?.data || error.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
+        fetchData();
         fetchTickets();
         // Mocking other stats for now
         setStats(prev => ({ ...prev, bookings: 1, courses: 5 }));

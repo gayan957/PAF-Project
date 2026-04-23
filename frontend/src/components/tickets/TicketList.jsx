@@ -91,7 +91,7 @@ const TicketList = ({ tickets, renderActions }) => {
                         <div className="ticket-attachments-preview">
                             {ticket.attachments.map(att => (
                                 <div key={att.id} className="attachment-badge">
-                                    {att.fileName}
+                                    {att.fileName.includes('_') ? att.fileName.substring(att.fileName.indexOf('_') + 1) : att.fileName}
                                 </div>
                             ))}
                         </div>
