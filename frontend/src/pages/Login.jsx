@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
+import PublicNavbar from '../components/PublicNavbar';
 
 const Login = () => {
     const { user, loading, checkAuth } = useAuth();
@@ -59,7 +60,9 @@ const Login = () => {
     );
 
     return (
-        <div className="login-page">
+        <>
+            <PublicNavbar />
+            <div className="login-page">
             <div className="glass-panel login-card">
                 <h1 className="login-title">Welcome Back</h1>
                 <p className="login-subtitle">Sign in to access your portal</p>
@@ -75,7 +78,7 @@ const Login = () => {
                             value={formData.email}
                             onChange={handleChange}
                             required
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                            className="auth-input"
                         />
                     </div>
                     <div>
@@ -86,7 +89,7 @@ const Login = () => {
                             value={formData.password}
                             onChange={handleChange}
                             required
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                            className="auth-input"
                         />
                     </div>
                     
@@ -109,8 +112,9 @@ const Login = () => {
                 <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
                     <p>Don't have an account? <Link to="/register" style={{ color: '#007bff', textDecoration: 'none' }}>Register</Link></p>
                 </div>
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 

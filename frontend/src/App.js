@@ -15,12 +15,20 @@ import Unauthorized from './pages/Unauthorized';
 import TicketListPage from './pages/TicketListPage';
 import TicketDetailPage from './pages/TicketDetailPage';
 
+import Sidebar from './components/Sidebar';
+import TopHeader from './components/TopHeader';
+
 const Layout = ({ children }) => {
   return (
-    <>
-      <Navbar />
-      {children}
-    </>
+    <div className="portal-layout">
+      <Sidebar />
+      <div className="portal-main">
+        <TopHeader />
+        <div className="portal-content">
+          {children}
+        </div>
+      </div>
+    </div>
   );
 };
 

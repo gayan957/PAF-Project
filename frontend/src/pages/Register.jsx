@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
+import PublicNavbar from '../components/PublicNavbar';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -55,7 +56,9 @@ const Register = () => {
     };
 
     return (
-        <div className="login-page">
+        <>
+            <PublicNavbar />
+            <div className="login-page">
             <div className="glass-panel login-card">
                 <h1 className="login-title">Create an Account</h1>
                 <p className="login-subtitle">Sign up to get started</p>
@@ -71,7 +74,7 @@ const Register = () => {
                             value={formData.name}
                             onChange={handleChange}
                             required
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                            className="auth-input"
                         />
                     </div>
                     <div>
@@ -82,7 +85,7 @@ const Register = () => {
                             value={formData.email}
                             onChange={handleChange}
                             required
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                            className="auth-input"
                         />
                     </div>
                     <div>
@@ -93,7 +96,7 @@ const Register = () => {
                             value={formData.password}
                             onChange={handleChange}
                             required
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                            className="auth-input"
                         />
                     </div>
                     <div>
@@ -104,7 +107,7 @@ const Register = () => {
                             value={formData.mobile}
                             onChange={handleChange}
                             required
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                            className="auth-input"
                         />
                     </div>
                     <div>
@@ -115,7 +118,7 @@ const Register = () => {
                             value={formData.nic}
                             onChange={handleChange}
                             required
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                            className="auth-input"
                         />
                     </div>
                     
@@ -127,8 +130,9 @@ const Register = () => {
                 <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
                     <p>Already have an account? <Link to="/login" style={{ color: '#007bff', textDecoration: 'none' }}>Log In</Link></p>
                 </div>
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
