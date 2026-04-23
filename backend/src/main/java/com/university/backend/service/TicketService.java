@@ -76,4 +76,28 @@ public class TicketService {
         Ticket ticket = getTicketById(id);
         ticketRepository.delete(ticket);
     }
+
+    @Transactional
+    public Ticket updateStatus(Long id, TicketStatus status) {
+        Ticket ticket = getTicketById(id);
+        ticket.setStatus(status);
+        return ticketRepository.save(ticket);
+    }
+
+    @Transactional
+    public Ticket assignTechnician(Long id, Long technicianId) {
+        Ticket ticket = getTicketById(id);
+        User technician = userRepository.findById(technicianId)
+                .orElseThrow(() -> new RuntimeException("Technician not found with id: " + technicianId));
+        ticket.setAssignedTechnician(technician);
+        return ticketRepository.save(ticket);
+    }
+
+    @Transactional
+    public Ticket resolveTicket(Long id, String notes) {
+        Ticket ticket = getTicketById(id);
+        ticket.setStatus(TicketStatus.RESOLVED);
+        ticket.setResolutionNotes(notes);
+        return ticketRepository.save(ticket);
+    }
 }

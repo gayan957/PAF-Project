@@ -49,4 +49,7 @@ public class Ticket {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_technician_id")
     private User assignedTechnician;
+
+    @Column(length = 2000)
+    private String resolutionNotes;
 }
