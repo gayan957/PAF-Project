@@ -1,7 +1,9 @@
-import React from 'react';
-import { Clock, CheckCircle2, AlertCircle, User as UserIcon, MapPin } from 'lucide-react';
+import React, { useState } from 'react';
+import { Clock, CheckCircle2, AlertCircle, User as UserIcon, MapPin, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import CommentSection from './CommentSection';
 
 const TicketList = ({ tickets, renderActions }) => {
+    const [expandedTicketId, setExpandedTicketId] = useState(null);
     const getStatusIcon = (status) => {
         switch (status) {
             case 'OPEN': return <AlertCircle size={16} className="status-icon open" />;
@@ -60,10 +62,30 @@ const TicketList = ({ tickets, renderActions }) => {
                             <UserIcon size={14} />
                             <span>{ticket.assignedTechnician ? ticket.assignedTechnician.name : 'Unassigned'}</span>
                         </div>
-                        <span className="ticket-date">
-                            {new Date(ticket.createdAt).toLocaleDateString()}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedTicketId(expandedTicketId === ticket.id ? null : ticket.id);
+                                }}
+                                className="btn-icon-sm"
+                                style={{ gap: '4px', fontSize: '0.75rem', color: 'var(--text-muted)' }}
+                            >
+                                <MessageSquare size={14} />
+                                <span>Comments</span>
+                                {expandedTicketId === ticket.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+                            <span className="ticket-date">
+                                {new Date(ticket.createdAt).toLocaleDateString()}
+                            </span>
+                        </div>
                     </div>
+
+                    {expandedTicketId === ticket.id && (
+                        <div onClick={(e) => e.stopPropagation()}>
+                            <CommentSection ticketId={ticket.id} />
+                        </div>
+                    )}
 
                     {ticket.attachments && ticket.attachments.length > 0 && (
                         <div className="ticket-attachments-preview">

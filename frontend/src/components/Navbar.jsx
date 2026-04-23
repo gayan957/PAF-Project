@@ -19,7 +19,11 @@ const Navbar = () => {
             <div className="container">
                 <div className="navbar-brand">UniPortal</div>
                 
-                <div className="navbar-nav">
+                <div className="navbar-nav" style={{ gap: '2rem' }}>
+                    <div style={{ display: 'flex', gap: '1.5rem' }}>
+                        <a href="/user-dashboard" style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>Dashboard</a>
+                        <a href="/tickets" style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>Tickets</a>
+                    </div>
                     <div className="nav-user">
                         <img 
                             src={user.avatarUrl || "https://ui-avatars.com/api/?name=" + user.name} 
