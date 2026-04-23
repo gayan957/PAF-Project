@@ -1,9 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
+import PublicNavbar from '../components/PublicNavbar';
 
 const Register = () => {
     const navigate = useNavigate();
+    const { user, checkAuth } = useAuth();
+
+    useEffect(() => {
+        if (user) {
+            switch (user.role) {
+                case 'ROLE_ADMIN':
+                    navigate('/admin-dashboard');
+                    break;
+                case 'ROLE_TECHNICIAN':
+                    navigate('/technician-dashboard');
+                    break;
+                case 'ROLE_USER':
+                default:
+                    navigate('/user-dashboard');
+                    break;
+            }
+        }
+    }, [user, navigate]);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -24,9 +44,10 @@ const Register = () => {
         setLoading(true);
 
         try {
-            await axios.post('http://localhost:8080/api/auth/register', formData);
-            // On success, redirect to login page
-            navigate('/login');
+            await api.post('/auth/register', formData);
+            // On success, automatically log in
+            await api.post('/auth/login', { email: formData.email, password: formData.password });
+            await checkAuth(); // Refresh the user context, which will trigger the useEffect redirection
         } catch (err) {
             setError(err.response?.data?.message || 'Registration failed. Please try again.');
         } finally {
@@ -35,7 +56,9 @@ const Register = () => {
     };
 
     return (
-        <div className="login-page">
+        <>
+            <PublicNavbar />
+            <div className="login-page">
             <div className="glass-panel login-card">
                 <h1 className="login-title">Create an Account</h1>
                 <p className="login-subtitle">Sign up to get started</p>
@@ -51,7 +74,7 @@ const Register = () => {
                             value={formData.name}
                             onChange={handleChange}
                             required
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                            className="auth-input"
                         />
                     </div>
                     <div>
@@ -62,7 +85,7 @@ const Register = () => {
                             value={formData.email}
                             onChange={handleChange}
                             required
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                            className="auth-input"
                         />
                     </div>
                     <div>
@@ -73,7 +96,7 @@ const Register = () => {
                             value={formData.password}
                             onChange={handleChange}
                             required
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                            className="auth-input"
                         />
                     </div>
                     <div>
@@ -84,7 +107,7 @@ const Register = () => {
                             value={formData.mobile}
                             onChange={handleChange}
                             required
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                            className="auth-input"
                         />
                     </div>
                     <div>
@@ -95,7 +118,7 @@ const Register = () => {
                             value={formData.nic}
                             onChange={handleChange}
                             required
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                            className="auth-input"
                         />
                     </div>
                     
@@ -107,8 +130,9 @@ const Register = () => {
                 <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
                     <p>Already have an account? <Link to="/login" style={{ color: '#007bff', textDecoration: 'none' }}>Log In</Link></p>
                 </div>
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
