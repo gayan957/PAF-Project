@@ -112,7 +112,7 @@ const TicketDetailPage = () => {
                                                 </div>
                                             )}
                                             <span style={{ fontSize: '0.7rem', display: 'block', marginTop: '0.5rem', color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                {att.fileName}
+                                                {att.fileName.includes('_') ? att.fileName.substring(att.fileName.indexOf('_') + 1) : att.fileName}
                                             </span>
                                         </a>
                                     ))}

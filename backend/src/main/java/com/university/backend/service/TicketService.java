@@ -55,7 +55,15 @@ public class TicketService {
     }
 
     public List<Ticket> getAllTickets() {
-        return ticketRepository.findAll();
+        return ticketRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    public List<Ticket> getTicketsByUser(User user) {
+        return ticketRepository.findByCreatedByOrderByCreatedAtDesc(user);
+    }
+
+    public List<Ticket> getTicketsByTechnician(User technician) {
+        return ticketRepository.findByAssignedTechnicianOrderByCreatedAtDesc(technician);
     }
 
     public Ticket getTicketById(Long id) {
@@ -135,7 +143,7 @@ public class TicketService {
             Files.copy(file.getInputStream(), filePath);
 
             Attachment attachment = Attachment.builder()
-                    .fileName(file.getOriginalFilename())
+                    .fileName(fileName)
                     .filePath(filePath.toString())
                     .fileType(file.getContentType())
                     .ticket(ticket)

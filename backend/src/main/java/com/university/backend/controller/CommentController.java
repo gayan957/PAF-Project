@@ -21,8 +21,16 @@ public class CommentController {
     private final CommentService commentService;
     private final UserService userService;
 
-    private User getCurrentUser(OAuth2User principal) {
-        String email = principal.getAttribute("email");
+    private User getCurrentUser(Object principal) {
+        String email = null;
+        if (principal instanceof OAuth2User) {
+            email = ((OAuth2User) principal).getAttribute("email");
+        } else if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
+            email = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+        }
+        if (email == null) {
+            throw new RuntimeException("Unable to determine user email from principal");
+        }
         return userService.getUserByEmail(email);
     }
 
@@ -35,7 +43,7 @@ public class CommentController {
     public ResponseEntity<Comment> addComment(
             @PathVariable Long ticketId, 
             @RequestBody CommentRequest request,
-            @AuthenticationPrincipal OAuth2User principal) {
+            @AuthenticationPrincipal Object principal) {
         return ResponseEntity.ok(commentService.addComment(ticketId, request.getContent(), getCurrentUser(principal)));
     }
 
@@ -43,15 +51,16 @@ public class CommentController {
     public ResponseEntity<Comment> updateComment(
             @PathVariable Long id, 
             @RequestBody CommentRequest request,
-            @AuthenticationPrincipal OAuth2User principal) {
+            @AuthenticationPrincipal Object principal) {
         return ResponseEntity.ok(commentService.updateComment(id, request.getContent(), getCurrentUser(principal)));
     }
 
     @DeleteMapping("/comments/{id}")
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long id,
-            @AuthenticationPrincipal OAuth2User principal) {
+            @AuthenticationPrincipal Object principal) {
         commentService.deleteComment(id, getCurrentUser(principal));
+
         return ResponseEntity.noContent().build();
     }
 }
