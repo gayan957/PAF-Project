@@ -1,6 +1,7 @@
 package com.university.backend.controller;
 
 import com.university.backend.dto.TicketRequest;
+import com.university.backend.model.Attachment;
 import com.university.backend.model.Ticket;
 import com.university.backend.model.TicketStatus;
 import com.university.backend.model.User;
@@ -12,7 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -68,5 +71,10 @@ public class TicketController {
     public ResponseEntity<Ticket> resolveTicket(@PathVariable Long id, @RequestBody Map<String, String> request) {
         String notes = request.get("notes");
         return ResponseEntity.ok(ticketService.resolveTicket(id, notes));
+    }
+
+    @PostMapping("/{id}/attachments")
+    public ResponseEntity<List<Attachment>> addAttachments(@PathVariable Long id, @RequestParam("files") MultipartFile[] files) throws IOException {
+        return ResponseEntity.ok(ticketService.addAttachments(id, files));
     }
 }

@@ -1,16 +1,26 @@
 package com.university.backend.service;
 
 import com.university.backend.dto.TicketRequest;
+import com.university.backend.model.Attachment;
 import com.university.backend.model.Ticket;
 import com.university.backend.model.TicketStatus;
 import com.university.backend.model.User;
+import com.university.backend.repository.AttachmentRepository;
 import com.university.backend.repository.TicketRepository;
 import com.university.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +28,10 @@ public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final AttachmentRepository attachmentRepository;
+
+    @Value("${file.upload-dir:uploads}")
+    private String uploadDir;
 
     @Transactional
     public Ticket createTicket(TicketRequest request, User creator) {
@@ -99,5 +113,37 @@ public class TicketService {
         ticket.setStatus(TicketStatus.RESOLVED);
         ticket.setResolutionNotes(notes);
         return ticketRepository.save(ticket);
+    }
+
+    @Transactional
+    public List<Attachment> addAttachments(Long ticketId, MultipartFile[] files) throws IOException {
+        if (files.length > 3) {
+            throw new RuntimeException("Maximum 3 files allowed");
+        }
+
+        Ticket ticket = getTicketById(ticketId);
+        List<Attachment> attachments = new ArrayList<>();
+
+        Path uploadPath = Paths.get(uploadDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        for (MultipartFile file : files) {
+            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath);
+
+            Attachment attachment = Attachment.builder()
+                    .fileName(file.getOriginalFilename())
+                    .filePath(filePath.toString())
+                    .fileType(file.getContentType())
+                    .ticket(ticket)
+                    .build();
+            
+            attachments.add(attachmentRepository.save(attachment));
+        }
+
+        return attachments;
     }
 }
