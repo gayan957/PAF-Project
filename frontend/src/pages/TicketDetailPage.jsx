@@ -31,6 +31,7 @@ const TicketDetailPage = () => {
         fetchData();
     }, [id, navigate]);
 
+
     const updateStatus = async (status) => {
         try {
             const response = await api.patch(`/tickets/${id}/status`, { status });
@@ -53,7 +54,7 @@ const TicketDetailPage = () => {
                     Back
                 </button>
 
-                <div className="dashboard-header" style={{ marginBottom: '2rem' }}>
+                <div className="dashboard-header" style={{ marginBottom: '2rem',color: 'black' }}>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
                             <h1 className="dashboard-title" style={{ margin: 0 }}>Ticket #{ticket.id}</h1>
@@ -82,14 +83,20 @@ const TicketDetailPage = () => {
                     )}
                 </div>
 
-                <div className="dashboard-grid" style={{ gridTemplateColumns: '2fr 1fr', alignItems: 'start' }}>
-                    <div className="glass-panel content-card">
-                        <h2 style={{ border: 'none', marginBottom: '1rem' }}>Description</h2>
-                        <p style={{ lineHeight: '1.6', fontSize: '1.1rem', whiteSpace: 'pre-wrap' }}>{ticket.description}</p>
+                <div className="dashboard-grid" style={{ gridTemplateColumns: '2fr 1fr', alignItems: 'start', gap: '1.5rem' }}>
+                    <div style={{ 
+                        background: '#ffffff', 
+                        borderRadius: '1.25rem', 
+                        padding: '2rem', 
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)', 
+                        border: '1px solid #e2e8f0' 
+                    }}>
+                        <h2 style={{ border: 'none', marginBottom: '1.5rem', color: '#0f172a', fontWeight: '700', fontSize: '1.25rem' }}>Description</h2>
+                        <p style={{ lineHeight: '1.6', fontSize: '1.05rem', whiteSpace: 'pre-wrap', color: '#334155' }}>{ticket.description}</p>
 
                         {ticket.attachments && ticket.attachments.length > 0 && (
-                            <div style={{ marginTop: '2rem' }}>
-                                <h3 style={{ fontSize: '1rem', marginBottom: '1rem' }}>Attachments</h3>
+                            <div style={{ marginTop: '2.5rem', borderTop: '1px solid #f1f5f9', paddingTop: '1.5rem' }}>
+                                <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: '#0f172a', fontWeight: '600' }}>Attachments</h3>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
                                     {ticket.attachments.map(att => (
                                         <a 
@@ -97,8 +104,17 @@ const TicketDetailPage = () => {
                                             href={`http://localhost:8080/uploads/${att.fileName}`} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
-                                            className="glass-panel"
-                                            style={{ padding: '0.5rem', textAlign: 'center', display: 'block', textDecoration: 'none' }}
+                                            className="attachment-card"
+                                            style={{ 
+                                                padding: '0.75rem', 
+                                                textAlign: 'center', 
+                                                display: 'block', 
+                                                textDecoration: 'none',
+                                                background: '#f8fafc',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '0.75rem',
+                                                transition: 'all 0.2s'
+                                            }}
                                         >
                                             {att.fileName.match(/\.(jpg|jpeg|png|gif)$/i) ? (
                                                 <img 
@@ -111,7 +127,7 @@ const TicketDetailPage = () => {
                                                     <Tag size={32} />
                                                 </div>
                                             )}
-                                            <span style={{ fontSize: '0.7rem', display: 'block', marginTop: '0.5rem', color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            <span style={{ fontSize: '0.7rem', display: 'block', marginTop: '0.5rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                 {att.fileName.includes('_') ? att.fileName.substring(att.fileName.indexOf('_') + 1) : att.fileName}
                                             </span>
                                         </a>
@@ -123,12 +139,18 @@ const TicketDetailPage = () => {
                         <CommentSection ticketId={ticket.id} />
                     </div>
 
-                    <div className="glass-panel content-card">
-                        <h2 style={{ border: 'none', marginBottom: '1rem', fontSize: '1.2rem' }}>Ticket Info</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                    <div style={{ 
+                        background: '#ffffff', 
+                        borderRadius: '1.25rem', 
+                        padding: '1.5rem', 
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)', 
+                        border: '1px solid #e2e8f0' 
+                    }}>
+                        <h2 style={{ border: 'none', marginBottom: '1.5rem', fontSize: '1.1rem', color: '#0f172a', fontWeight: '700' }}>Ticket Info</h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                             <div className="meta-item-vertical">
-                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Priority</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.025em', marginBottom: '0.25rem', display: 'block' }}>Priority</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#334155' }}>
                                     <div className="priority-dot" style={{ 
                                         backgroundColor: ticket.priority === 'HIGH' || ticket.priority === 'URGENT' ? 'var(--danger)' : 
                                                        ticket.priority === 'MEDIUM' ? '#f59e0b' : 'var(--success)' 
@@ -137,22 +159,22 @@ const TicketDetailPage = () => {
                                 </div>
                             </div>
                             <div className="meta-item-vertical">
-                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Location</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.025em', marginBottom: '0.25rem', display: 'block' }}>Location</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#334155' }}>
                                     <MapPin size={16} color="var(--primary)" />
                                     <span>{ticket.location || 'N/A'}</span>
                                 </div>
                             </div>
                             <div className="meta-item-vertical">
-                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Created By</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.025em', marginBottom: '0.25rem', display: 'block' }}>Created By</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#334155' }}>
                                     <UserIcon size={16} color="var(--accent)" />
                                     <span>{ticket.createdBy?.name || 'Anonymous'}</span>
                                 </div>
                             </div>
                             <div className="meta-item-vertical">
-                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Assigned To</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.025em', marginBottom: '0.25rem', display: 'block' }}>Assigned To</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#334155' }}>
                                     <AlertCircle size={16} color="var(--success)" />
                                     <span>{ticket.assignedTechnician?.name || 'Waiting for assignment'}</span>
                                 </div>

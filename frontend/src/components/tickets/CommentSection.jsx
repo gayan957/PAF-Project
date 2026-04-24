@@ -100,30 +100,31 @@ const CommentSection = ({ ticketId }) => {
     };
 
     return (
-        <div style={{ marginTop: '2rem' }}>
-            <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-main)', fontWeight: '600' }}>
+        <div style={{ marginTop: '2.5rem', borderTop: '1px solid #f1f5f9', paddingTop: '2rem' }}>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: '#0f172a', fontWeight: '700' }}>
                 Discussion
-                <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '400' }}>
+                <span style={{ marginLeft: '0.6rem', fontSize: '0.8rem', color: '#64748b', fontWeight: '400' }}>
                     ({comments.length} {comments.length === 1 ? 'message' : 'messages'})
                 </span>
             </h3>
 
             {/* Chat Window */}
             <div style={{
-                background: 'rgba(0,0,0,0.15)',
-                borderRadius: '0.75rem',
-                border: '1px solid var(--border)',
-                padding: '1rem',
-                minHeight: '200px',
-                maxHeight: '400px',
+                background: '#f8fafc',
+                borderRadius: '1rem',
+                border: '1px solid #e2e8f0',
+                padding: '1.25rem',
+                minHeight: '250px',
+                maxHeight: '500px',
                 overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '0.75rem',
-                marginBottom: '1rem'
+                gap: '1rem',
+                marginBottom: '1.5rem',
+                boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
             }}>
                 {comments.length === 0 ? (
-                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', margin: 'auto' }}>
+                    <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem', margin: 'auto' }}>
                         No messages yet. Start the discussion!
                     </div>
                 ) : (
@@ -159,8 +160,8 @@ const CommentSection = ({ ticketId }) => {
                                 <div style={{ maxWidth: '70%', display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
                                     {/* Name + Role */}
                                     {!isMine && (
-                                        <div style={{ fontSize: '0.7rem', display: 'flex', gap: '0.4rem', paddingLeft: '0.25rem' }}>
-                                            <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{comment.user?.name}</span>
+                                        <div style={{ fontSize: '0.75rem', display: 'flex', gap: '0.4rem', paddingLeft: '0.25rem' }}>
+                                            <span style={{ fontWeight: '600', color: '#1e293b' }}>{comment.user?.name}</span>
                                             {comment.user?.role && (
                                                 <span style={{ color: getRoleColor(comment.user.role), fontWeight: '500' }}>
                                                     · {getRoleLabel(comment.user.role)}
@@ -186,14 +187,15 @@ const CommentSection = ({ ticketId }) => {
                                         </div>
                                     ) : (
                                         <div style={{
-                                            padding: '0.6rem 0.85rem',
-                                            borderRadius: isMine ? '1rem 1rem 0.25rem 1rem' : '1rem 1rem 1rem 0.25rem',
-                                            background: isMine ? 'var(--primary)' : 'rgba(255,255,255,0.07)',
-                                            color: isMine ? '#fff' : 'var(--text-main)',
-                                            fontSize: '0.875rem',
+                                            padding: '0.75rem 1rem',
+                                            borderRadius: isMine ? '1.25rem 1.25rem 0.25rem 1.25rem' : '1.25rem 1.25rem 1.25rem 0.25rem',
+                                            background: isMine ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#ffffff',
+                                            color: isMine ? '#fff' : '#334155',
+                                            fontSize: '0.9rem',
                                             lineHeight: '1.5',
                                             wordBreak: 'break-word',
-                                            border: isMine ? 'none' : '1px solid var(--border)',
+                                            border: isMine ? 'none' : '1px solid #e2e8f0',
+                                            boxShadow: isMine ? '0 4px 12px rgba(99,102,241,0.2)' : '0 2px 4px rgba(0,0,0,0.02)'
                                         }}>
                                             {comment.content}
                                         </div>
@@ -201,7 +203,7 @@ const CommentSection = ({ ticketId }) => {
 
                                     {/* Timestamp + Actions */}
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: '0.25rem', paddingRight: '0.25rem' }}>
-                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                        <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
                                             {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             {comment.updatedAt !== comment.createdAt && ' · edited'}
                                         </span>
@@ -232,29 +234,40 @@ const CommentSection = ({ ticketId }) => {
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Type a message... (Enter to send)"
+                    placeholder="Type a message..."
                     className="form-input"
                     rows="1"
-                    style={{ flex: 1, resize: 'none', borderRadius: '1.5rem', padding: '0.6rem 1rem', fontSize: '0.875rem' }}
+                    style={{ 
+                        flex: 1, 
+                        resize: 'none', 
+                        borderRadius: '1.25rem', 
+                        padding: '0.75rem 1.25rem', 
+                        fontSize: '0.9rem',
+                        background: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        color: '#0f172a',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                    }}
                 />
                 <button
                     type="submit"
                     disabled={loading || !newComment.trim()}
                     style={{
-                        background: newComment.trim() ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
+                        background: newComment.trim() ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#f1f5f9',
                         border: 'none',
                         borderRadius: '50%',
-                        width: '40px',
-                        height: '40px',
+                        width: '44px',
+                        height: '44px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: newComment.trim() ? 'pointer' : 'not-allowed',
-                        transition: 'background 0.2s',
+                        transition: 'all 0.2s',
                         flexShrink: 0,
+                        boxShadow: newComment.trim() ? '0 4px 12px rgba(99,102,241,0.3)' : 'none'
                     }}
                 >
-                    <Send size={16} color={newComment.trim() ? '#fff' : 'var(--text-muted)'} />
+                    <Send size={18} color={newComment.trim() ? '#fff' : '#94a3b8'} />
                 </button>
             </form>
         </div>
