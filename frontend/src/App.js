@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminUsers from './pages/AdminUsers';
 import TechnicianDashboard from './pages/TechnicianDashboard';
 import Unauthorized from './pages/Unauthorized';
 import TicketListPage from './pages/TicketListPage';
@@ -48,6 +49,7 @@ function App() {
           
           <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']} />}>
             <Route path="/admin-dashboard" element={<Layout><AdminDashboard /></Layout>} />
+            <Route path="/admin/users" element={<Layout><AdminUsers /></Layout>} />
           </Route>
           
           <Route element={<ProtectedRoute allowedRoles={['ROLE_TECHNICIAN']} />}>
@@ -67,4 +69,5 @@ function App() {
 }
 
 export default App;
+
 
