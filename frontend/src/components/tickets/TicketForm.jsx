@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Upload, Send } from 'lucide-react';
+import { X, Upload, Send, Ticket as TicketIcon } from 'lucide-react';
 import api from '../../api/axios';
 
 const TicketForm = ({ onSuccess, onClose }) => {
@@ -51,68 +51,195 @@ const TicketForm = ({ onSuccess, onClose }) => {
 
     return (
         <div className="modal-overlay">
-            <div className="glass-panel modal-content" style={{ maxWidth: '600px', width: '100%', padding: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ margin: 0 }}>Create Support Ticket</h2>
-                    <button onClick={onClose} className="btn-icon"><X size={20} /></button>
-                </div>
+            <div className="modal-content" style={{ 
+                maxWidth: '650px', 
+                width: '100%', 
+                padding: '0', 
+                overflow: 'hidden',
+                position: 'relative',
+                background: '#ffffff',
+                borderRadius: '1.25rem',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                border: '1px solid #e2e8f0'
+            }}>
+                {/* Background Decor Circles - Adjusted for Light Theme */}
+                <div style={{
+                    position: 'absolute',
+                    top: '-10%',
+                    right: '-10%',
+                    width: '200px',
+                    height: '200px',
+                    background: 'rgba(139, 92, 246, 0.05)',
+                    borderRadius: '50%',
+                    zIndex: 0
+                }}></div>
+                <div style={{
+                    position: 'absolute',
+                    bottom: '-5%',
+                    left: '-5%',
+                    width: '150px',
+                    height: '150px',
+                    background: 'rgba(236, 72, 153, 0.03)',
+                    borderRadius: '50%',
+                    zIndex: 0
+                }}></div>
 
-                <form onSubmit={handleSubmit} className="ticket-form">
-                    <div className="form-group">
-                        <label>Category</label>
-                        <select name="category" value={formData.category} onChange={handleChange} required className="form-input">
-                            <option value="">Select Category</option>
-                            <option value="TECHNICAL">Technical Issue</option>
-                            <option value="ACADEMIC">Academic Support</option>
-                            <option value="FACILITY">Facility Maintenance</option>
-                            <option value="OTHER">Other</option>
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Priority</label>
-                        <select name="priority" value={formData.priority} onChange={handleChange} className="form-input">
-                            <option value="LOW">Low</option>
-                            <option value="MEDIUM">Medium</option>
-                            <option value="HIGH">High</option>
-                            <option value="URGENT">Urgent</option>
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Location</label>
-                        <input type="text" name="location" value={formData.location} onChange={handleChange} placeholder="Room no, Lab, etc." className="form-input" />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Description</label>
-                        <textarea name="description" value={formData.description} onChange={handleChange} required rows="4" className="form-input" placeholder="Describe your issue..."></textarea>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Contact Info</label>
-                        <input type="text" name="contactInfo" value={formData.contactInfo} onChange={handleChange} placeholder="Phone or alternative email" className="form-input" />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Attachments (Max 3)</label>
-                        <div className="file-upload-container">
-                            <input type="file" multiple onChange={handleFileChange} id="file-upload" hidden accept="image/*,.pdf,.doc,.docx" />
-                            <label htmlFor="file-upload" className="file-upload-label">
-                                <Upload size={18} />
-                                <span>{files.length > 0 ? `${files.length} files selected` : "Choose files"}</span>
-                            </label>
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                    {/* Header - Light Style */}
+                    <div style={{ 
+                        padding: '1.5rem 2rem', 
+                        borderBottom: '1px solid #f1f5f9',
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        background: 'rgba(139, 92, 246, 0.02)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <div style={{ 
+                                background: 'rgba(139, 92, 246, 0.1)', 
+                                color: '#8b5cf6', 
+                                padding: '0.6rem', 
+                                borderRadius: '0.6rem',
+                                marginRight: '1rem',
+                                display: 'flex'
+                            }}>
+                                <TicketIcon size={22} />
+                            </div>
+                            <div>
+                                <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a', fontWeight: '700' }}>Create Support Ticket</h2>
+                                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Fill in the details to get assistance</p>
+                            </div>
                         </div>
-                    </div>
-
-                    <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                        <button type="button" onClick={onClose} className="btn btn-outline">Cancel</button>
-                        <button type="submit" disabled={loading} className="btn btn-primary">
-                            {loading ? "Submitting..." : "Submit Ticket"}
-                            <Send size={18} style={{ marginLeft: '8px' }} />
+                        <button onClick={onClose} className="btn-icon" style={{ background: '#f8fafc', color: '#94a3b8' }}>
+                            <X size={20} />
                         </button>
                     </div>
-                </form>
+
+                    <form onSubmit={handleSubmit} style={{ padding: '2rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <div className="form-group">
+                                <label style={{ color: '#334155', fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Category</label>
+                                <select 
+                                    name="category" 
+                                    value={formData.category} 
+                                    onChange={handleChange} 
+                                    required 
+                                    className="form-input"
+                                    style={{ 
+                                        background: '#f8fafc', 
+                                        borderColor: '#e2e8f0', 
+                                        color: '#0f172a',
+                                        height: '45px'
+                                    }}
+                                >
+                                    <option value="">Select Category</option>
+                                    <option value="TECHNICAL">Technical Issue</option>
+                                    <option value="ACADEMIC">Academic Support</option>
+                                    <option value="FACILITY">Facility Maintenance</option>
+                                    <option value="OTHER">Other</option>
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label style={{ color: '#334155', fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Priority</label>
+                                <select 
+                                    name="priority" 
+                                    value={formData.priority} 
+                                    onChange={handleChange} 
+                                    className="form-input"
+                                    style={{ 
+                                        background: '#f8fafc', 
+                                        borderColor: '#e2e8f0', 
+                                        color: '#0f172a',
+                                        height: '45px'
+                                    }}
+                                >
+                                    <option value="LOW">Low</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="HIGH">High</option>
+                                    <option value="URGENT">Urgent</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="form-group" style={{ marginTop: '1rem' }}>
+                            <label style={{ color: '#334155', fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Location</label>
+                            <input 
+                                type="text" 
+                                name="location" 
+                                value={formData.location} 
+                                onChange={handleChange} 
+                                placeholder="Room no, Lab, Hall, etc." 
+                                className="form-input" 
+                                style={{ background: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a', height: '45px' }}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label style={{ color: '#334155', fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Description</label>
+                            <textarea 
+                                name="description" 
+                                value={formData.description} 
+                                onChange={handleChange} 
+                                required 
+                                rows="4" 
+                                className="form-input" 
+                                placeholder="Clearly describe the issue you're facing..."
+                                style={{ background: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a', resize: 'none' }}
+                            ></textarea>
+                        </div>
+
+                        <div className="form-group">
+                            <label style={{ color: '#334155', fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Contact Info</label>
+                            <input 
+                                type="text" 
+                                name="contactInfo" 
+                                value={formData.contactInfo} 
+                                onChange={handleChange} 
+                                placeholder="Phone number or alternative email" 
+                                className="form-input" 
+                                style={{ background: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a', height: '45px' }}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label style={{ color: '#334155', fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Attachments (Max 3)</label>
+                            <div className="file-upload-container">
+                                <input type="file" multiple onChange={handleFileChange} id="file-upload" hidden accept="image/*,.pdf,.doc,.docx" />
+                                <label htmlFor="file-upload" className="file-upload-label" style={{ 
+                                    background: '#f8fafc', 
+                                    border: '2px dashed #e2e8f0',
+                                    color: '#64748b'
+                                }}>
+                                    <Upload size={18} />
+                                    <span>{files.length > 0 ? `${files.length} files selected` : "Drag & drop or click to upload files"}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                            <button type="button" onClick={onClose} className="btn btn-outline" style={{ borderRadius: '0.75rem', padding: '0.75rem 2rem', color: '#64748b', borderColor: '#e2e8f0' }}>
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit" 
+                                disabled={loading} 
+                                className="btn" 
+                                style={{ 
+                                    background: 'linear-gradient(to right, #8b5cf6, #fe7096)', 
+                                    color: 'white',
+                                    borderRadius: '0.75rem',
+                                    padding: '0.75rem 2.5rem',
+                                    fontWeight: '600',
+                                    boxShadow: '0 10px 15px -3px rgba(139, 92, 246, 0.3)'
+                                }}
+                            >
+                                {loading ? "Creating..." : "Submit Ticket"}
+                                <Send size={18} style={{ marginLeft: '8px' }} />
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     );
