@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, UserPlus } from 'lucide-react';
+import { X, UserPlus, Users } from 'lucide-react';
 import api from '../../api/axios';
 
 const AssignModal = ({ ticket, technicians, onSuccess, onClose }) => {
@@ -27,36 +27,102 @@ const AssignModal = ({ ticket, technicians, onSuccess, onClose }) => {
 
     return (
         <div className="modal-overlay">
-            <div className="glass-panel modal-content" style={{ maxWidth: '400px', width: '100%', padding: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ margin: 0 }}>Assign Ticket #{ticket.id}</h2>
-                    <button onClick={onClose} className="btn-icon"><X size={20} /></button>
-                </div>
+            <div className="modal-content" style={{ 
+                maxWidth: '450px', 
+                width: '100%', 
+                padding: '0', 
+                overflow: 'hidden',
+                position: 'relative',
+                background: '#ffffff',
+                borderRadius: '1rem',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                border: '1px solid #e2e8f0'
+            }}>
+                {/* Background Decor Circles */}
+                <div style={{
+                    position: 'absolute',
+                    top: '-10%',
+                    right: '-10%',
+                    width: '150px',
+                    height: '150px',
+                    background: 'rgba(139, 92, 246, 0.05)',
+                    borderRadius: '50%',
+                    zIndex: 0
+                }}></div>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Select Technician</label>
-                        <select 
-                            value={technicianId} 
-                            onChange={(e) => setTechnicianId(e.target.value)} 
-                            required 
-                            className="form-input"
-                        >
-                            <option value="">Select a technician</option>
-                            {technicians.map(tech => (
-                                <option key={tech.id} value={tech.id}>{tech.name} ({tech.email})</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                        <button type="button" onClick={onClose} className="btn btn-outline">Cancel</button>
-                        <button type="submit" disabled={loading} className="btn btn-primary">
-                            {loading ? "Assigning..." : "Assign"}
-                            <UserPlus size={18} style={{ marginLeft: '8px' }} />
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                    {/* Header */}
+                    <div style={{ 
+                        padding: '1.25rem 1.5rem', 
+                        borderBottom: '1px solid #f1f5f9',
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        background: 'rgba(59, 130, 246, 0.02)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <div style={{ 
+                                background: 'rgba(59, 130, 246, 0.1)', 
+                                color: '#3b82f6', 
+                                padding: '0.5rem', 
+                                borderRadius: '0.5rem',
+                                marginRight: '0.75rem',
+                                display: 'flex'
+                            }}>
+                                <Users size={20} />
+                            </div>
+                            <div>
+                                <h2 style={{ margin: 0, fontSize: '1.1rem', color: '#0f172a', fontWeight: '700' }}>Assign Ticket</h2>
+                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>Ticket ID: #{ticket.id}</p>
+                            </div>
+                        </div>
+                        <button onClick={onClose} className="btn-icon" style={{ background: '#f8fafc', color: '#94a3b8' }}>
+                            <X size={18} />
                         </button>
                     </div>
-                </form>
+
+                    <form onSubmit={handleSubmit} style={{ padding: '1.5rem' }}>
+                        <div className="form-group">
+                            <label style={{ color: '#334155', fontWeight: '600', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Select Technician</label>
+                            <select 
+                                value={technicianId} 
+                                onChange={(e) => setTechnicianId(e.target.value)} 
+                                required 
+                                className="form-input"
+                                style={{ background: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a', height: '45px' }}
+                            >
+                                <option value="">Select a technician</option>
+                                {technicians.map(tech => (
+                                    <option key={tech.id} value={tech.id}>
+                                        {tech.name} ({tech.email})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div style={{ marginTop: '2rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                            <button type="button" onClick={onClose} className="btn btn-outline" style={{ borderRadius: '0.5rem', padding: '0.6rem 1.25rem', color: '#64748b', borderColor: '#e2e8f0' }}>
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit" 
+                                disabled={loading} 
+                                className="btn" 
+                                style={{ 
+                                    background: 'linear-gradient(to right, #3b82f6, #8b5cf6)', 
+                                    color: 'white',
+                                    borderRadius: '0.5rem',
+                                    padding: '0.6rem 1.5rem',
+                                    fontWeight: '600',
+                                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)'
+                                }}
+                            >
+                                {loading ? "Assigning..." : "Assign Now"}
+                                <UserPlus size={18} style={{ marginLeft: '8px' }} />
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     );
