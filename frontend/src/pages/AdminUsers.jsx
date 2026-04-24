@@ -110,7 +110,7 @@ const AdminUsers = () => {
                         <Users size={22} color="#fff" />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: '1.4rem', fontWeight: '700', color: '#f8fafc', margin: 0 }}>User Management</h1>
+                        <h1 style={{ fontSize: '1.4rem', fontWeight: '700', color: 'rgb(98, 97, 97)', margin: 0 }}>User Management</h1>
                         <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>{users.length} registered users</p>
                     </div>
                 </div>
