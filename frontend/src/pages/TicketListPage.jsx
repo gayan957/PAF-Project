@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import TicketTable from '../components/tickets/TicketTable';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, Zap, Activity, Info } from 'lucide-react';
 import TicketForm from '../components/tickets/TicketForm';
+
+const priorityConfig = {
+    URGENT: { label: 'Urgent', color: '#ef4444', bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.3)', icon: AlertTriangle },
+    HIGH:   { label: 'High',   color: '#f97316', bg: 'rgba(249,115,22,0.15)', border: 'rgba(249,115,22,0.3)', icon: Zap },
+    MEDIUM: { label: 'Medium', color: '#3b82f6', bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.3)', icon: Activity },
+    LOW:    { label: 'Low',    color: '#10b981', bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.3)', icon: Info },
+};
 
 const TicketListPage = () => {
     const [tickets, setTickets] = useState([]);
@@ -83,6 +90,39 @@ const TicketListPage = () => {
                         <Plus size={18} style={{ marginRight: '8px' }} />
                         New Ticket
                     </button>
+                </div>
+
+                {/* Priority Stats Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                    {Object.entries(priorityConfig).map(([key, cfg]) => {
+                        const count = tickets.filter(t => t.priority === key).length;
+                        const Icon = cfg.icon;
+                        return (
+                            <div key={key} style={{
+                                background: cfg.bg, 
+                                border: `1px solid ${cfg.border}`,
+                                borderRadius: '0.75rem', 
+                                padding: '1rem',
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '0.75rem'
+                            }}>
+                                <div style={{
+                                    width: 36, height: 36, borderRadius: '8px',
+                                    background: `${cfg.border}`, 
+                                    display: 'flex',
+                                    alignItems: 'center', 
+                                    justifyContent: 'center'
+                                }}>
+                                    <Icon size={18} color={cfg.color} />
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '1.4rem', fontWeight: '700', color: cfg.color, lineHeight: 1 }}>{count}</div>
+                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>{cfg.label}</div>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
 
                 <TicketTable tickets={tickets} renderActions={renderUserActions} />
