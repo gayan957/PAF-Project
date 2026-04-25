@@ -19,6 +19,7 @@ import Profile from './pages/Profile';
 import ResourcesPage from './pages/ResourcesPage';
 import ResourceDetailPage from './pages/ResourceDetailPage';
 import AdminResourcesPage from './pages/AdminResourcesPage';
+import UserBookingsPage from './pages/bookings/UserBookingsPage';
 
 import Sidebar from './components/Sidebar';
 import TopHeader from './components/TopHeader';
