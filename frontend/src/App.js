@@ -66,6 +66,7 @@ function App() {
             <Route path="/tickets" element={<Layout><TicketListPage /></Layout>} />
             <Route path="/tickets/:id" element={<Layout><TicketDetailPage /></Layout>} />
             <Route path="/profile" element={<Layout><Profile /></Layout>} />
+            <Route path="/bookings" element={<Layout><UserBookingsPage /></Layout>} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['ROLE_USER', 'ROLE_ADMIN', 'ROLE_TECHNICIAN']} />}>
