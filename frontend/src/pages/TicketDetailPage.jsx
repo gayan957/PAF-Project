@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import { ArrowLeft, MapPin, User as UserIcon, Tag, AlertCircle, CheckCircle2, Play } from 'lucide-react';
+import { ArrowLeft, MapPin, User as UserIcon, Tag, AlertCircle, CheckCircle2, Play, Clock, AlertTriangle } from 'lucide-react';
 import CommentSection from '../components/tickets/CommentSection';
 
 const TicketDetailPage = () => {
@@ -45,6 +45,17 @@ const TicketDetailPage = () => {
     if (!ticket) return null;
 
     const isStaff = user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_TECHNICIAN';
+
+    const formatSLA = (dateString) => {
+        if (!dateString) return 'Pending';
+        return new Date(dateString).toLocaleString();
+    };
+
+    const isOverdue = () => {
+        if (!ticket.expectedResolutionTime) return false;
+        if (ticket.status === 'RESOLVED' || ticket.status === 'CLOSED') return false;
+        return new Date() > new Date(ticket.expectedResolutionTime);
+    };
 
     return (
         <div className="page-container">
@@ -179,6 +190,39 @@ const TicketDetailPage = () => {
                                     <span>{ticket.assignedTechnician?.name || 'Waiting for assignment'}</span>
                                 </div>
                             </div>
+                            
+                            <div style={{ margin: '0.5rem 0', borderBottom: '1px solid #e2e8f0' }}></div>
+                            <h3 style={{ fontSize: '0.9rem', color: '#0f172a', fontWeight: '700', margin: '0' }}>SLA Tracking</h3>
+                            
+                            <div className="meta-item-vertical">
+                                <label style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.025em', marginBottom: '0.25rem', display: 'block' }}>First Response</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#334155' }}>
+                                    <Clock size={16} color="var(--primary)" />
+                                    <span style={{ fontSize: '0.9rem' }}>{formatSLA(ticket.firstResponseAt)}</span>
+                                </div>
+                            </div>
+
+                            <div className="meta-item-vertical">
+                                <label style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.025em', marginBottom: '0.25rem', display: 'block' }}>Expected Resolution</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: isOverdue() ? '#ef4444' : '#334155' }}>
+                                    {isOverdue() ? <AlertTriangle size={16} color="#ef4444" /> : <Clock size={16} color="var(--primary)" />}
+                                    <span style={{ fontSize: '0.9rem', fontWeight: isOverdue() ? 'bold' : 'normal' }}>
+                                        {formatSLA(ticket.expectedResolutionTime)}
+                                        {isOverdue() && " (Overdue)"}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {ticket.resolvedAt && (
+                                <div className="meta-item-vertical">
+                                    <label style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.025em', marginBottom: '0.25rem', display: 'block' }}>Actual Resolution</label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#334155' }}>
+                                        <CheckCircle2 size={16} color="var(--success)" />
+                                        <span style={{ fontSize: '0.9rem' }}>{formatSLA(ticket.resolvedAt)}</span>
+                                    </div>
+                                </div>
+                            )}
+
                             {ticket.resolutionNotes && (
                                 <div className="meta-item-vertical" style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '0.5rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                                     <label style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: 'bold' }}>Resolution Notes</label>

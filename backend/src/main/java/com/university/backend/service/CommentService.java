@@ -34,6 +34,16 @@ public class CommentService {
                 .user(user)
                 .ticket(ticket)
                 .build();
+                
+        // Update firstResponseAt if this is the first response from someone other than the creator
+        if (ticket.getFirstResponseAt() == null && !user.getId().equals(ticket.getCreatedBy().getId())) {
+            ticket.setFirstResponseAt(java.time.LocalDateTime.now());
+            // Optionally, change status to IN_PROGRESS if it's currently OPEN
+            if (ticket.getStatus() == com.university.backend.model.TicketStatus.OPEN) {
+                ticket.setStatus(com.university.backend.model.TicketStatus.IN_PROGRESS);
+            }
+            ticketRepository.save(ticket);
+        }
         
         return commentRepository.save(comment);
     }
