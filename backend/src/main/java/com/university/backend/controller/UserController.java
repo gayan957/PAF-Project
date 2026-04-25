@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -26,11 +26,12 @@ public class UserController {
     private final UserRepository userRepository;
 
     @PutMapping("/profile")
-    public ResponseEntity<?> updateProfile(@AuthenticationPrincipal Object principal, @RequestBody ProfileUpdateRequest request) {
-        if (principal == null) {
+    public ResponseEntity<?> updateProfile(Authentication authentication, @RequestBody ProfileUpdateRequest request) {
+        if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(401).body(Map.of("message", "Not authenticated"));
         }
 
+        Object principal = authentication.getPrincipal();
         String email = null;
         if (principal instanceof OAuth2User) {
             email = ((OAuth2User) principal).getAttribute("email");
@@ -39,8 +40,10 @@ public class UserController {
         }
 
         if (email == null) {
+            System.out.println("Debug: Principal class: " + principal.getClass().getName());
             return ResponseEntity.status(401).body(Map.of("message", "Could not extract email from principal"));
         }
+        System.out.println("Debug: Updating profile for email: " + email);
 
         Optional<User> userOpt = userRepository.findByEmail(email);
 

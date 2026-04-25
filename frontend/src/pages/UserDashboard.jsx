@@ -14,15 +14,6 @@ const UserDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
 
-    const [profileData, setProfileData] = useState({
-        name: '',
-        email: '',
-        mobile: '',
-        nic: ''
-    });
-    const [updateMessage, setUpdateMessage] = useState({ text: '', type: '' });
-    const [updating, setUpdating] = useState(false);
-
     const fetchTickets = async () => {
         try {
             const response = await api.get('/tickets');
@@ -43,43 +34,12 @@ const UserDashboard = () => {
     };
 
     useEffect(() => {
-        if (user) {
-            setProfileData({
-                name: user.name || '',
-                email: user.email || '',
-                mobile: user.mobile || '',
-                nic: user.nic || ''
-            });
-        }
-    }, [user]);
-
-    useEffect(() => {
         fetchTickets();
         // Mocking other stats for now
         setStats(prev => ({ ...prev, bookings: 1, courses: 5 }));
     }, []);
 
-    const handleProfileChange = (e) => {
-        setProfileData({ ...profileData, [e.target.name]: e.target.value });
-    };
 
-    const handleProfileUpdate = async (e) => {
-        e.preventDefault();
-        setUpdating(true);
-        setUpdateMessage({ text: '', type: '' });
-        try {
-            await api.put('/users/profile', profileData);
-            setUpdateMessage({ text: 'Profile updated successfully!', type: 'success' });
-            await checkAuth();
-        } catch (error) {
-            setUpdateMessage({ 
-                text: error.response?.data?.message || 'Failed to update profile', 
-                type: 'error' 
-            });
-        } finally {
-            setUpdating(false);
-        }
-    };
 
     if (loading) return <div className="loader"></div>;
 
@@ -134,48 +94,6 @@ const UserDashboard = () => {
                                 <button className="card-btn" style={{ background: '#ec4899' }}>Details</button>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                {/* Edit Profile Form */}
-                <div>
-                    <h3 className="section-title">Edit Personal Details</h3>
-                    <div className="form-card">
-                        {updateMessage.text && (
-                            <div style={{ 
-                                padding: '0.75rem', 
-                                marginBottom: '1.5rem', 
-                                borderRadius: '0.5rem',
-                                backgroundColor: updateMessage.type === 'success' ? '#dcfce7' : '#fee2e2',
-                                color: updateMessage.type === 'success' ? '#166534' : '#991b1b'
-                            }}>
-                                {updateMessage.text}
-                            </div>
-                        )}
-                        <form onSubmit={handleProfileUpdate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <label style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '500' }}>Full Name</label>
-                                <input type="text" name="name" value={profileData.name} onChange={handleProfileChange} className="form-input-clean" />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <label style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '500' }}>Email Address</label>
-                                <input type="email" name="email" value={profileData.email} onChange={handleProfileChange} className="form-input-clean" disabled />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <label style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '500' }}>Mobile Number</label>
-                                <input type="text" name="mobile" value={profileData.mobile} onChange={handleProfileChange} className="form-input-clean" />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <label style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '500' }}>NIC Number</label>
-                                <input type="text" name="nic" value={profileData.nic} onChange={handleProfileChange} className="form-input-clean" />
-                            </div>
-                            
-                            <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
-                                <button type="submit" className="card-btn" style={{ padding: '0.75rem 2rem' }} disabled={updating}>
-                                    {updating ? 'Saving...' : 'Update Profile'}
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
 

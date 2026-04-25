@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, Calendar, CreditCard, Award, HelpCircle, LogOut, Users, Ticket as TicketIcon } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Calendar, CreditCard, Award, HelpCircle, LogOut, Users, Ticket as TicketIcon, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
@@ -36,6 +36,10 @@ const Sidebar = () => {
                             <TicketIcon size={20} />
                             <span>Ticket Management</span>
                         </NavLink>
+                        <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <User size={20} />
+                            <span>Profile</span>
+                        </NavLink>
                     </>
                 ) : isTechnician ? (
                     <>
@@ -46,6 +50,10 @@ const Sidebar = () => {
                         <NavLink to="/tickets" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                             <Calendar size={20} />
                             <span>Assigned Tickets</span>
+                        </NavLink>
+                        <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <User size={20} />
+                            <span>Profile</span>
                         </NavLink>
                     </>
                 ) : (
@@ -73,6 +81,10 @@ const Sidebar = () => {
                         <NavLink to="/help" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                             <HelpCircle size={20} />
                             <span>Help</span>
+                        </NavLink>
+                        <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <User size={20} />
+                            <span>Profile</span>
                         </NavLink>
                     </>
                 )}
