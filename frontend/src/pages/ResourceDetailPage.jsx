@@ -3,12 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getResourceById, getQrUrl, updateResourceStatus, deleteResource } from '../api/resourceApi';
 import StatusBadge from '../components/resources/StatusBadge';
 
-export default function ResourceDetailPage({ currentUser }) {
+import { useAuth } from '../context/AuthContext'; // add this import at top
+
+export default function ResourceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [resource, setResource] = useState(null);
   const [loading, setLoading] = useState(true);
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const isAdmin = user?.role === 'ROLE_ADMIN';
 
   useEffect(() => {
     getResourceById(id)
