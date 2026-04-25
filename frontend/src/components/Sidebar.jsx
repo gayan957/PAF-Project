@@ -1,46 +1,93 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, Calendar, CreditCard, Award, HelpCircle, LogOut } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Calendar, CreditCard, Award, HelpCircle, LogOut, Users, Ticket as TicketIcon, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import './Sidebar.css'; // We will create this
+import './Sidebar.css';
 
 const Sidebar = () => {
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
+    
+    const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
+    const isTechnician = user?.role === 'ROLE_TECHNICIAN' || user?.role === 'TECHNICIAN';
 
     return (
         <aside className="sidebar">
             <div className="sidebar-brand">
                 <div className="brand-logo">
-                    <span>U</span>
+                    <span>{isAdmin ? 'A' : (isTechnician ? 'T' : 'U')}</span>
                 </div>
-                <span className="brand-title">Student Portal</span>
+                <span className="brand-title">
+                    {isAdmin ? 'Admin Portal' : (isTechnician ? 'Tech Portal' : 'Student Portal')}
+                </span>
             </div>
             
             <nav className="sidebar-nav">
-                <NavLink to="/user-dashboard" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-                    <LayoutDashboard size={20} />
-                    <span>Dashboard</span>
-                </NavLink>
-                <NavLink to="/courses" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-                    <BookOpen size={20} />
-                    <span>Courses</span>
-                </NavLink>
-                <NavLink to="/tickets" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-                    <Calendar size={20} />
-                    <span>Tickets / Schedule</span>
-                </NavLink>
-                <NavLink to="/finances" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-                    <CreditCard size={20} />
-                    <span>Finances</span>
-                </NavLink>
-                <NavLink to="/results" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-                    <Award size={20} />
-                    <span>Results</span>
-                </NavLink>
-                <NavLink to="/help" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-                    <HelpCircle size={20} />
-                    <span>Help</span>
-                </NavLink>
+                {isAdmin ? (
+                    <>
+                        <NavLink to="/admin-dashboard" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <LayoutDashboard size={20} />
+                            <span>Dashboard</span>
+                        </NavLink>
+                        <NavLink to="/admin/users" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <Users size={20} />
+                            <span>User Management</span>
+                        </NavLink>
+                        <NavLink to="/tickets" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <TicketIcon size={20} />
+                            <span>Ticket Management</span>
+                        </NavLink>
+                        <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <User size={20} />
+                            <span>Profile</span>
+                        </NavLink>
+                    </>
+                ) : isTechnician ? (
+                    <>
+                        <NavLink to="/technician-dashboard" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <LayoutDashboard size={20} />
+                            <span>Dashboard</span>
+                        </NavLink>
+                        <NavLink to="/tickets" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <Calendar size={20} />
+                            <span>Assigned Tickets</span>
+                        </NavLink>
+                        <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <User size={20} />
+                            <span>Profile</span>
+                        </NavLink>
+                    </>
+                ) : (
+                    <>
+                        <NavLink to="/user-dashboard" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <LayoutDashboard size={20} />
+                            <span>Dashboard</span>
+                        </NavLink>
+                        <NavLink to="/courses" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <BookOpen size={20} />
+                            <span>Courses</span>
+                        </NavLink>
+                        <NavLink to="/tickets" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <Calendar size={20} />
+                            <span>Tickets / Schedule</span>
+                        </NavLink>
+                        <NavLink to="/finances" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <CreditCard size={20} />
+                            <span>Finances</span>
+                        </NavLink>
+                        <NavLink to="/results" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <Award size={20} />
+                            <span>Results</span>
+                        </NavLink>
+                        <NavLink to="/help" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <HelpCircle size={20} />
+                            <span>Help</span>
+                        </NavLink>
+                        <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <User size={20} />
+                            <span>Profile</span>
+                        </NavLink>
+                    </>
+                )}
             </nav>
 
             <div className="sidebar-footer">

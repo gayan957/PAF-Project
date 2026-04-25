@@ -10,10 +10,12 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminUsers from './pages/AdminUsers';
 import TechnicianDashboard from './pages/TechnicianDashboard';
 import Unauthorized from './pages/Unauthorized';
 import TicketListPage from './pages/TicketListPage';
 import TicketDetailPage from './pages/TicketDetailPage';
+import Profile from './pages/Profile';
 
 import Sidebar from './components/Sidebar';
 import TopHeader from './components/TopHeader';
@@ -48,6 +50,7 @@ function App() {
           
           <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']} />}>
             <Route path="/admin-dashboard" element={<Layout><AdminDashboard /></Layout>} />
+            <Route path="/admin/users" element={<Layout><AdminUsers /></Layout>} />
           </Route>
           
           <Route element={<ProtectedRoute allowedRoles={['ROLE_TECHNICIAN']} />}>
@@ -57,6 +60,7 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['ROLE_USER', 'ROLE_ADMIN', 'ROLE_TECHNICIAN']} />}>
             <Route path="/tickets" element={<Layout><TicketListPage /></Layout>} />
             <Route path="/tickets/:id" element={<Layout><TicketDetailPage /></Layout>} />
+            <Route path="/profile" element={<Layout><Profile /></Layout>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -67,4 +71,5 @@ function App() {
 }
 
 export default App;
+
 

@@ -1,8 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { Users, Activity, Trash2, Ticket as TicketIcon, UserPlus } from 'lucide-react';
+import { Users, Activity, Trash2, Ticket as TicketIcon, UserPlus, TrendingUp, Bookmark, Diamond, Home } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import TicketList from '../components/tickets/TicketList';
 import AssignModal from '../components/tickets/AssignModal';
+import './AdminDashboard.css';
+
+const barChartData = [
+  { name: 'JAN', search: 4000, direct: 2400, bookmark: 2400 },
+  { name: 'FEB', search: 3000, direct: 1398, bookmark: 2210 },
+  { name: 'MAR', search: 2000, direct: 9800, bookmark: 2290 },
+  { name: 'APR', search: 2780, direct: 3908, bookmark: 2000 },
+  { name: 'MAY', search: 1890, direct: 4800, bookmark: 2181 },
+  { name: 'JUN', search: 2390, direct: 3800, bookmark: 2500 },
+  { name: 'JUL', search: 3490, direct: 4300, bookmark: 2100 },
+];
+
+const pieChartData = [
+  { name: 'Search Engines', value: 30 },
+  { name: 'Direct Click', value: 30 },
+  { name: 'Bookmarks Click', value: 40 },
+];
+const pieColors = ['#ffbf96', '#047edf', '#07cdae'];
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState({ users: 0, tickets: 0, alerts: 0 });
@@ -92,97 +111,121 @@ const AdminDashboard = () => {
     );
 
     return (
-        <div className="page-container">
-            <div className="container">
-                <div className="dashboard-header">
-                    <h1 className="dashboard-title">Admin Dashboard</h1>
+        <div className="admin-dashboard-container page-container">
+            <div className="admin-page-header">
+                <div className="admin-page-title">
+                    <span className="admin-page-title-icon"><Home size={20} /></span>
+                    Dashboard
+                </div>
+                <div className="admin-breadcrumb">
+                    Overview <span style={{margin: '0 5px'}}>i</span>
+                </div>
+            </div>
+
+            <div className="admin-cards-row">
+                <div className="admin-gradient-card bg-gradient-danger">
+                    <div className="admin-card-inner">
+                        <div>
+                            <div className="admin-card-title">Weekly Sales</div>
+                            <div className="admin-card-value">$ 15,0000</div>
+                        </div>
+                        <TrendingUp size={28} className="admin-card-icon" />
+                    </div>
+                    <div className="admin-card-subtitle">Increased by 60%</div>
+                    <div className="admin-card-decor"></div>
+                    <div className="admin-card-decor-2"></div>
                 </div>
 
-                <div className="dashboard-grid">
-                    <div className="glass-panel stat-card">
-                        <div className="stat-icon" style={{ color: 'var(--accent)', background: 'rgba(139, 92, 246, 0.1)' }}>
-                            <Users size={24} />
+                <div className="admin-gradient-card bg-gradient-info">
+                    <div className="admin-card-inner">
+                        <div>
+                            <div className="admin-card-title">Weekly Orders</div>
+                            <div className="admin-card-value">45,6334</div>
                         </div>
-                        <div className="stat-content">
-                            <h3>Total Users</h3>
-                            <p>{stats.users}</p>
+                        <Bookmark size={28} className="admin-card-icon" />
+                    </div>
+                    <div className="admin-card-subtitle">Decreased by 10%</div>
+                    <div className="admin-card-decor"></div>
+                    <div className="admin-card-decor-2"></div>
+                </div>
+
+                <div className="admin-gradient-card bg-gradient-success">
+                    <div className="admin-card-inner">
+                        <div>
+                            <div className="admin-card-title">Visitors Online</div>
+                            <div className="admin-card-value">95,5741</div>
+                        </div>
+                        <Diamond size={28} className="admin-card-icon" />
+                    </div>
+                    <div className="admin-card-subtitle">Increased by 5%</div>
+                    <div className="admin-card-decor"></div>
+                    <div className="admin-card-decor-2"></div>
+                </div>
+            </div>
+
+            <div className="admin-charts-row">
+                <div className="admin-chart-card">
+                    <div className="admin-chart-title">
+                        Visit And Sales Statistics
+                        <div className="admin-chart-legend">
+                            <div className="admin-legend-item">
+                                <span className="admin-legend-dot" style={{background: '#8b5cf6'}}></span> CHN
+                            </div>
+                            <div className="admin-legend-item">
+                                <span className="admin-legend-dot" style={{background: '#fe7096'}}></span> USA
+                            </div>
+                            <div className="admin-legend-item">
+                                <span className="admin-legend-dot" style={{background: '#047edf'}}></span> UK
+                            </div>
                         </div>
                     </div>
-                    <div className="glass-panel stat-card">
-                        <div className="stat-icon" style={{ color: 'var(--primary)', background: 'rgba(59, 130, 246, 0.1)' }}>
-                            <TicketIcon size={24} />
-                        </div>
-                        <div className="stat-content">
-                            <h3>Total Tickets</h3>
-                            <p>{stats.tickets}</p>
-                        </div>
-                    </div>
-                    <div className="glass-panel stat-card">
-                        <div className="stat-icon" style={{ color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.1)' }}>
-                            <Activity size={24} />
-                        </div>
-                        <div className="stat-content">
-                            <h3>Urgent Tickets</h3>
-                            <p>{stats.alerts}</p>
-                        </div>
+                    <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer>
+                            <BarChart data={barChartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--text-muted)'}} />
+                                <YAxis axisLine={false} tickLine={false} tick={{fill: 'var(--text-muted)'}} />
+                                <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{background: 'var(--bg-card)', border: 'none', borderRadius: '8px'}} />
+                                <Bar dataKey="search" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={10} />
+                                <Bar dataKey="direct" fill="#fe7096" radius={[4, 4, 0, 0]} barSize={10} />
+                                <Bar dataKey="bookmark" fill="#047edf" radius={[4, 4, 0, 0]} barSize={10} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
 
-                <div className="glass-panel content-card" style={{ marginTop: '2rem' }}>
-                    <h2 style={{ border: 'none' }}>Ticket Management</h2>
-                    <TicketList 
-                        tickets={tickets} 
-                        renderActions={renderAdminActions} 
-                    />
-                </div>
-
-                <div className="glass-panel content-card" style={{ marginTop: '2rem' }}>
-                    <h2 style={{ border: 'none' }}>User Management</h2>
-                    <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                                    <th style={{ padding: '0.75rem 1rem' }}>Name</th>
-                                    <th style={{ padding: '0.75rem 1rem' }}>Email</th>
-                                    <th style={{ padding: '0.75rem 1rem' }}>Role</th>
-                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody style={{ opacity: actionLoading ? 0.5 : 1 }}>
-                                {users.map(user => (
-                                    <tr key={user.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                        <td style={{ padding: '0.75rem 1rem' }}>{user.name}</td>
-                                        <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{user.email}</td>
-                                        <td style={{ padding: '0.75rem 1rem' }}>
-                                            <select 
-                                                value={user.role} 
-                                                onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                                                disabled={actionLoading}
-                                                style={{
-                                                    background: 'rgba(30, 41, 59, 0.8)',
-                                                    color: 'var(--text-main)',
-                                                    border: '1px solid var(--border)',
-                                                    padding: '0.4rem',
-                                                    borderRadius: '0.25rem',
-                                                    outline: 'none',
-                                                    fontFamily: 'inherit'
-                                                }}
-                                            >
-                                                <option value="ROLE_USER">User</option>
-                                                <option value="ROLE_TECHNICIAN">Technician</option>
-                                                <option value="ROLE_ADMIN">Admin</option>
-                                            </select>
+                <div className="admin-chart-card">
+                    <div className="admin-chart-title">Traffic Sources</div>
+                    <div style={{ width: '100%', height: 250 }}>
+                        <ResponsiveContainer>
+                            <PieChart>
+                                <Pie
+                                    data={pieChartData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {pieChartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} stroke="none" />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{background: 'var(--bg-card)', border: 'none', borderRadius: '8px'}} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <div style={{ marginTop: '1rem' }}>
+                        <table style={{ width: '100%', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                            <tbody>
+                                {pieChartData.map((entry, index) => (
+                                    <tr key={index} style={{ height: '30px' }}>
+                                        <td>
+                                            <span className="admin-legend-dot" style={{background: pieColors[index], display: 'inline-block', marginRight: '8px'}}></span>
+                                            {entry.name}
                                         </td>
-                                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                                            <button 
-                                                onClick={() => handleDeleteUser(user.id)}
-                                                disabled={actionLoading}
-                                                className="btn btn-outline"
-                                                style={{ padding: '0.4rem', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.3)' }}
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </td>
+                                        <td style={{textAlign: 'right'}}>{entry.value}%</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -190,6 +233,17 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Original Functionality - Styled to fit */}
+            <div className="glass-panel content-card" style={{ marginTop: '2rem' }}>
+                <h2 style={{ border: 'none' }}>Ticket Management Overview <span style={{fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 'normal', marginLeft: '10px'}}>(Total: {stats.tickets})</span></h2>
+                <TicketList 
+                    tickets={tickets} 
+                    renderActions={renderAdminActions} 
+                />
+            </div>
+
+            {/* User Management removed to its own page */}
 
             {selectedTicket && (
                 <AssignModal 
@@ -204,3 +258,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
