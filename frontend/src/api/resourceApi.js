@@ -6,7 +6,7 @@ const api = axios.create({
 });
 
 export const getResources = (params = {}) =>
-  api.get('/', { params });
+  api.get('', { params });
 
 export const getResourceById = (id) =>
   api.get(`/${id}`);
@@ -18,7 +18,7 @@ export const getAnalytics = () =>
   api.get('/analytics');
 
 export const createResource = (data) =>
-  api.post('/', data);
+  api.post('', data);
 
 export const updateResource = (id, data) =>
   api.put(`/${id}`, data);
