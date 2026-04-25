@@ -48,8 +48,10 @@ public class TicketController {
         String email = extractEmail(principal);
         User user = userService.getUserByEmail(email);
         
-        if (user.getRole().name().equals("ROLE_ADMIN") || user.getRole().name().equals("ROLE_TECHNICIAN")) {
+        if (user.getRole().name().equals("ROLE_ADMIN")) {
             return ResponseEntity.ok(ticketService.getAllTickets());
+        } else if (user.getRole().name().equals("ROLE_TECHNICIAN")) {
+            return ResponseEntity.ok(ticketService.getTicketsByTechnician(user));
         } else {
             return ResponseEntity.ok(ticketService.getTicketsByUser(user));
         }
