@@ -16,6 +16,8 @@ import Unauthorized from './pages/Unauthorized';
 import TicketListPage from './pages/TicketListPage';
 import TicketDetailPage from './pages/TicketDetailPage';
 import Profile from './pages/Profile';
+import UserBookingsPage from './pages/bookings/UserBookingsPage';
+import AdminBookingsPage from './pages/bookings/AdminBookingsPage';
 
 import Sidebar from './components/Sidebar';
 import TopHeader from './components/TopHeader';
@@ -51,6 +53,7 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']} />}>
             <Route path="/admin-dashboard" element={<Layout><AdminDashboard /></Layout>} />
             <Route path="/admin/users" element={<Layout><AdminUsers /></Layout>} />
+            <Route path="/admin/bookings" element={<Layout><AdminBookingsPage /></Layout>} />
           </Route>
           
           <Route element={<ProtectedRoute allowedRoles={['ROLE_TECHNICIAN']} />}>
@@ -61,6 +64,7 @@ function App() {
             <Route path="/tickets" element={<Layout><TicketListPage /></Layout>} />
             <Route path="/tickets/:id" element={<Layout><TicketDetailPage /></Layout>} />
             <Route path="/profile" element={<Layout><Profile /></Layout>} />
+            <Route path="/bookings" element={<Layout><UserBookingsPage /></Layout>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
