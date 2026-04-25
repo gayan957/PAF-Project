@@ -44,6 +44,12 @@ public class Ticket {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    private LocalDateTime expectedResolutionTime;
+    
+    private LocalDateTime firstResponseAt;
+    
+    private LocalDateTime resolvedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id", nullable = false)
     private User createdBy;

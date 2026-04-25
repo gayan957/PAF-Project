@@ -43,6 +43,7 @@ public class TicketService {
                 .location(request.getLocation())
                 .contactInfo(request.getContactInfo())
                 .createdBy(creator)
+                .expectedResolutionTime(calculateExpectedResolutionTime(request.getPriority()))
                 .build();
         
         if (request.getAssignedTechnicianId() != null) {
@@ -102,6 +103,12 @@ public class TicketService {
     @Transactional
     public Ticket updateStatus(Long id, TicketStatus status) {
         Ticket ticket = getTicketById(id);
+
+        
+        if ((status == TicketStatus.RESOLVED || status == TicketStatus.CLOSED) && ticket.getResolvedAt() == null) {
+            ticket.setResolvedAt(java.time.LocalDateTime.now());
+        }
+        
         ticket.setStatus(status);
         return ticketRepository.save(ticket);
     }
@@ -112,14 +119,26 @@ public class TicketService {
         User technician = userRepository.findById(technicianId)
                 .orElseThrow(() -> new RuntimeException("Technician not found with id: " + technicianId));
         ticket.setAssignedTechnician(technician);
+        
+        if (ticket.getStatus() == TicketStatus.OPEN) {
+            ticket.setStatus(TicketStatus.IN_PROGRESS);
+        }
+        
         return ticketRepository.save(ticket);
     }
 
     @Transactional
     public Ticket resolveTicket(Long id, String notes) {
         Ticket ticket = getTicketById(id);
+
+        
         ticket.setStatus(TicketStatus.RESOLVED);
         ticket.setResolutionNotes(notes);
+        
+        if (ticket.getResolvedAt() == null) {
+            ticket.setResolvedAt(java.time.LocalDateTime.now());
+        }
+        
         return ticketRepository.save(ticket);
     }
 
@@ -153,5 +172,18 @@ public class TicketService {
         }
 
         return attachments;
+    }
+
+    private java.time.LocalDateTime calculateExpectedResolutionTime(String priority) {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        if (priority == null) return now.plusDays(3); // default
+        
+        switch (priority.toUpperCase()) {
+            case "URGENT": return now.plusHours(4);
+            case "HIGH": return now.plusHours(24);
+            case "MEDIUM": return now.plusDays(3);
+            case "LOW": return now.plusDays(7);
+            default: return now.plusDays(3);
+        }
     }
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye } from 'lucide-react';
+import { Eye, AlertTriangle } from 'lucide-react';
 
 const TicketTable = ({ tickets, renderActions }) => {
     const navigate = useNavigate();
@@ -12,6 +12,13 @@ const TicketTable = ({ tickets, renderActions }) => {
     if (!tickets || tickets.length === 0) {
         return <div className="text-muted" style={{ textAlign: 'center', padding: '2rem' }}>No tickets found.</div>;
     }
+
+    const isOverdue = (ticket) => {
+        if (!ticket.expectedResolutionTime) return false;
+        if (ticket.status === 'RESOLVED' || ticket.status === 'CLOSED') return false;
+        const expected = new Date(ticket.expectedResolutionTime);
+        return new Date() > expected;
+    };
 
     return (
         <div style={{
@@ -52,7 +59,26 @@ const TicketTable = ({ tickets, renderActions }) => {
                                     <span className="ticket-category" style={{ fontSize: '0.7rem' }}>{ticket.category}</span>
                                 </td>
                                 <td style={{ padding: '1rem 1.25rem', color: '#f1f5f9', fontWeight: '500', fontSize: '0.9rem', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {ticket.description}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        {ticket.description}
+                                        {isOverdue(ticket) && (
+                                            <span style={{ 
+                                                display: 'inline-flex', 
+                                                alignItems: 'center', 
+                                                gap: '0.25rem', 
+                                                background: 'rgba(239, 68, 68, 0.1)', 
+                                                color: '#ef4444', 
+                                                padding: '0.15rem 0.4rem', 
+                                                borderRadius: '0.25rem', 
+                                                fontSize: '0.65rem', 
+                                                fontWeight: 'bold',
+                                                border: '1px solid rgba(239, 68, 68, 0.2)'
+                                            }}>
+                                                <AlertTriangle size={10} />
+                                                OVERDUE
+                                            </span>
+                                        )}
+                                    </div>
                                 </td>
                                 <td style={{ padding: '1rem 1.25rem' }}>
                                     <span style={{ 
