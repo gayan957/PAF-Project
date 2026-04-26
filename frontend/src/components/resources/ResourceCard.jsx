@@ -23,6 +23,8 @@ export default function ResourceCard({ resource, onBook }) {
   const meta     = typeMeta[resource.type] || typeMeta.EQUIPMENT;
   const TypeIcon = meta.icon;
   const primaryImage = getPrimaryResourceImage(resource);
+  const isActive = resource.status === 'ACTIVE';
+  const handleBook = () => onBook ? onBook(resource) : navigate(`/bookings?resourceId=${resource.id}`);
 
   return (
     <div
@@ -62,21 +64,15 @@ export default function ResourceCard({ resource, onBook }) {
           justifyContent: 'center',
         }}>
           <div style={{
-            height: '138px',
-            background: `linear-gradient(135deg, ${meta.bg} 0%, #ffffff 100%)`,
+            width: '58px', height: '58px', borderRadius: '16px',
+            background: '#fff', color: meta.color,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)',
           }}>
-            <div style={{
-              width: '58px', height: '58px', borderRadius: '16px',
-              background: '#fff', color: meta.color,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)',
-            }}>
-              <TypeIcon size={30} />
-            </div>
+            <TypeIcon size={30} />
           </div>
-        )}
-      </button>
+        </div>
+      )}
 
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
         {/* Status + type badge */}

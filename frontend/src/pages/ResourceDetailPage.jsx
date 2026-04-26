@@ -53,6 +53,9 @@ export default function ResourceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [statusLoading, setStatusLoading] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [upcomingBookings, setUpcomingBookings] = useState([]);
+  const [loadingUpcoming, setLoadingUpcoming] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
 
   useEffect(() => {

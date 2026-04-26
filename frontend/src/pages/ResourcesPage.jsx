@@ -5,6 +5,7 @@ import { getResources } from '../api/resourceApi';
 import ResourceCard from '../components/resources/ResourceCard';
 import ResourceFilter from '../components/resources/ResourceFilter';
 import StatusBadge from '../components/resources/StatusBadge';
+import BookingFormModal from '../components/bookings/BookingFormModal';
 import { getPrimaryResourceImage } from '../components/resources/resourceImages';
 
 export default function ResourcesPage() {
