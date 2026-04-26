@@ -21,6 +21,7 @@ public class ResourceResponseDTO {
     private String description;
     private String imageUrl;
     private List<String> imageUrls;
+    private List<ResourceAvailabilityWindowDTO> availabilityWindows;
     private String statusReason;
     private String createdBy;
     private LocalDateTime createdAt;
