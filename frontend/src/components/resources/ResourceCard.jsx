@@ -2,6 +2,7 @@ import React from 'react';
 import { Building2, Clock, DoorOpen, FlaskConical, MapPin, Package, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import StatusBadge from './StatusBadge';
+import { getPrimaryResourceImage } from './resourceImages';
 
 const typeMeta = {
   LECTURE_HALL: { label: 'Lecture Hall', icon: DoorOpen, color: '#7c3aed', bg: '#f3e8ff' },
@@ -14,6 +15,7 @@ export default function ResourceCard({ resource }) {
   const navigate = useNavigate();
   const meta = typeMeta[resource.type] || typeMeta.EQUIPMENT;
   const TypeIcon = meta.icon;
+  const primaryImage = getPrimaryResourceImage(resource);
 
   return (
     <button
@@ -43,9 +45,9 @@ export default function ResourceCard({ resource }) {
         event.currentTarget.style.borderColor = '#e2e8f0';
       }}
     >
-      {resource.imageUrl ? (
+      {primaryImage ? (
         <img
-          src={resource.imageUrl}
+          src={primaryImage}
           alt={resource.name}
           style={{ width: '100%', height: '138px', objectFit: 'cover', background: '#f8fafc' }}
         />

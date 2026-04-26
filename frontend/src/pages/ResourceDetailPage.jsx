@@ -19,6 +19,7 @@ import { useAuth } from '../context/AuthContext';
 import { deleteResource, getResourceById, updateResourceStatus } from '../api/resourceApi';
 import ResourceAvailabilityCalendar from '../components/resources/ResourceAvailabilityCalendar';
 import StatusBadge from '../components/resources/StatusBadge';
+import { getResourceImageGallery } from '../components/resources/resourceImages';
 
 const typeMeta = {
   LECTURE_HALL: { label: 'Lecture Hall', icon: DoorOpen, bg: '#f3e8ff', color: '#7c3aed' },
@@ -40,6 +41,7 @@ export default function ResourceDetailPage() {
   const [resource, setResource] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
 
   useEffect(() => {
@@ -50,6 +52,14 @@ export default function ResourceDetailPage() {
   }, [id, navigate]);
 
   const meta = useMemo(() => typeMeta[resource?.type] || typeMeta.EQUIPMENT, [resource]);
+  const imageUrls = useMemo(
+    () => getResourceImageGallery(resource),
+    [resource]
+  );
+
+  useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [resource?.id]);
 
   const handleStatusChange = async (newStatus) => {
     const reason = window.prompt(`Reason for changing status to ${newStatus.replace(/_/g, ' ')}:`);
@@ -113,12 +123,43 @@ export default function ResourceDetailPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: '24px' }}>
         <div>
-          {resource.imageUrl ? (
-            <img
-              src={resource.imageUrl}
-              alt={resource.name}
-              style={{ width: '100%', height: '286px', objectFit: 'cover', borderRadius: '8px', marginBottom: '20px', border: '1px solid #e2e8f0' }}
-            />
+          {imageUrls.length > 0 ? (
+            <div style={{ marginBottom: '20px' }}>
+              <img
+                src={imageUrls[selectedImageIndex]}
+                alt={resource.name}
+                style={{ width: '100%', height: '326px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'block' }}
+              />
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))',
+                gap: '10px',
+                marginTop: '12px',
+              }}>
+                {imageUrls.map((imageUrl, index) => (
+                  <button
+                    type="button"
+                    key={imageUrl}
+                    onClick={() => setSelectedImageIndex(index)}
+                    style={{
+                      padding: 0,
+                      border: index === selectedImageIndex ? '2px solid #0f766e' : '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      background: '#fff',
+                      height: '72px',
+                    }}
+                  >
+                    <img
+                      src={imageUrl}
+                      alt={`${resource.name} ${index + 1}`}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
           ) : (
             <div style={{
               height: '286px',
