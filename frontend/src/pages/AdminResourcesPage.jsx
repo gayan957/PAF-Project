@@ -22,6 +22,7 @@ import {
 } from '../api/resourceApi';
 import ResourceForm from '../components/resources/ResourceForm';
 import StatusBadge from '../components/resources/StatusBadge';
+import { getPrimaryResourceImage } from '../components/resources/resourceImages';
 import {
   Bar,
   BarChart,
@@ -87,10 +88,10 @@ export default function AdminResourcesPage() {
     fetchAll();
   }, []);
 
-  const handleCreate = async (data) => {
+  const handleCreate = async (data, imageFiles = []) => {
     setLoading(true);
     try {
-      await createResource(data);
+      await createResource(data, imageFiles);
       setShowForm(false);
       await fetchAll();
     } catch (error) {
@@ -100,10 +101,10 @@ export default function AdminResourcesPage() {
     }
   };
 
-  const handleEdit = async (data) => {
+  const handleEdit = async (data, imageFiles = []) => {
     setLoading(true);
     try {
-      await updateResource(editTarget.id, data);
+      await updateResource(editTarget.id, data, imageFiles);
       setEditTarget(null);
       await fetchAll();
     } catch (error) {
@@ -171,7 +172,6 @@ export default function AdminResourcesPage() {
     <div style={{ padding: '24px', maxWidth: '1340px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px', marginBottom: '24px' }}>
         <div>
-          <p style={eyebrow}>Module A - Member 1</p>
           <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '850', color: '#0f172a', letterSpacing: '0' }}>
             Facilities Management
           </h1>
@@ -243,11 +243,39 @@ export default function AdminResourcesPage() {
                   <tr>
                     <td colSpan={7} style={emptyCell}>No facilities found.</td>
                   </tr>
-                ) : filteredResources.map((resource) => (
+                ) : filteredResources.map((resource) => {
+                  const primaryImage = getPrimaryResourceImage(resource);
+
+                  return (
                   <tr key={resource.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={tableCell}>
-                      <div style={{ fontWeight: '800', color: '#0f172a' }}>{resource.name}</div>
-                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '3px' }}>{resource.building || 'No building assigned'}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {primaryImage ? (
+                          <img
+                            src={primaryImage}
+                            alt={resource.name}
+                            style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #e2e8f0', flexShrink: 0 }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '8px',
+                            background: '#ecfeff',
+                            color: '#0f766e',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}>
+                            <Building2 size={20} />
+                          </div>
+                        )}
+                        <div>
+                          <div style={{ fontWeight: '800', color: '#0f172a' }}>{resource.name}</div>
+                          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '3px' }}>{resource.building || 'No building assigned'}</div>
+                        </div>
+                      </div>
                     </td>
                     <td style={tableCell}>
                       <span style={{
@@ -274,7 +302,8 @@ export default function AdminResourcesPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -519,15 +548,6 @@ function IconButton({ title, color, onClick, icon: Icon }) {
 function formatEnum(value) {
   return value?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()) || 'N/A';
 }
-
-const eyebrow = {
-  margin: '0 0 6px',
-  color: '#0f766e',
-  fontSize: '12px',
-  fontWeight: '850',
-  textTransform: 'uppercase',
-  letterSpacing: '0',
-};
 
 const primaryButton = {
   padding: '10px 16px',
