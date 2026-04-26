@@ -17,19 +17,8 @@ export default function ResourceCard({ resource, onBook }) {
   const meta     = typeMeta[resource.type] || typeMeta.EQUIPMENT;
   const TypeIcon = meta.icon;
   const primaryImage = getPrimaryResourceImage(resource);
-  const isActive = resource.status === 'ACTIVE';
-  const handleBook = () => onBook ? onBook(resource) : navigate(`/bookings?resourceId=${resource.id}`);
-
-  // ✅ FIX: define missing logic
   const isActive = resource.status === 'AVAILABLE';
-
-  const handleBook = () => {
-    if (onBook) {
-      onBook(resource);
-    } else {
-      navigate(`/bookings?resourceId=${resource.id}`);
-    }
-  };
+  const handleBook = () => onBook ? onBook(resource) : navigate(`/bookings?resourceId=${resource.id}`);
 
   return (
     <div
