@@ -6,6 +6,7 @@ import ResourceCard from '../components/resources/ResourceCard';
 import ResourceFilter from '../components/resources/ResourceFilter';
 import StatusBadge from '../components/resources/StatusBadge';
 import BookingFormModal from '../components/bookings/BookingFormModal';
+import { formatAvailabilitySummary } from '../components/resources/resourceAvailability';
 import { getPrimaryResourceImage } from '../components/resources/resourceImages';
 
 export default function ResourcesPage() {
@@ -254,7 +255,7 @@ function ResourceRow({ resource, onClick }) {
         </div>
       </div>
       <Info icon={MapPin} text={resource.location} />
-      <Info icon={Clock} text={`${resource.availabilityStart} to ${resource.availabilityEnd}`} />
+      <Info icon={Clock} text={formatAvailabilitySummary(resource)} />
       <Info icon={Users} text={resource.capacity ? `${resource.capacity}` : 'N/A'} />
       <StatusBadge status={resource.status} />
     </button>

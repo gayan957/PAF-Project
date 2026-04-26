@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Clock, MapPin, Save, Trash2, Upload, X } from 'lucide-react';
+import { Clock, MapPin, Plus, Save, Trash2, Upload, X } from 'lucide-react';
+import { DAY_OPTIONS, getAvailabilityWindows } from './resourceAvailability';
 import { getResourceImageUrl } from './resourceImages';
 
 const fieldStyle = {
@@ -36,6 +37,7 @@ const emptyForm = {
   building: '',
   availabilityStart: '08:00',
   availabilityEnd: '18:00',
+  availabilityWindows: [{ day: 'MONDAY', openingTime: '08:00', closingTime: '18:00' }],
   status: 'ACTIVE',
   description: '',
   imageUrls: [],
@@ -58,10 +60,14 @@ export default function ResourceForm({ initial, onSubmit, onCancel, loading }) {
     }
 
     const initialImages = normalizeImages(initial.imageUrls, initial.imageUrl);
+    const initialWindows = getAvailabilityWindows(initial);
     setForm({
       ...emptyForm,
       ...initial,
       capacity: initial.capacity ?? '',
+      availabilityStart: initialWindows[0]?.openingTime || '08:00',
+      availabilityEnd: initialWindows[0]?.closingTime || '18:00',
+      availabilityWindows: initialWindows.length > 0 ? initialWindows : emptyForm.availabilityWindows,
       imageUrls: initialImages,
       description: initial.description ?? '',
       building: initial.building ?? '',
@@ -120,17 +126,48 @@ export default function ResourceForm({ initial, onSubmit, onCancel, loading }) {
     setImageFiles((current) => current.filter((_, currentIndex) => currentIndex !== index));
   };
 
+  const handleWindowChange = (index, key) => (event) => {
+    const value = event.target.value;
+    setForm((current) => ({
+      ...current,
+      availabilityWindows: current.availabilityWindows.map((window, currentIndex) =>
+        currentIndex === index ? { ...window, [key]: value } : window
+      ),
+    }));
+    setErrors((current) => ({ ...current, availabilityWindows: undefined }));
+  };
+
+  const addAvailabilityWindow = () => {
+    setForm((current) => ({
+      ...current,
+      availabilityWindows: [
+        ...current.availabilityWindows,
+        { day: 'MONDAY', openingTime: '08:00', closingTime: '18:00' },
+      ],
+    }));
+  };
+
+  const removeAvailabilityWindow = (index) => {
+    setForm((current) => ({
+      ...current,
+      availabilityWindows: current.availabilityWindows.filter((_, currentIndex) => currentIndex !== index),
+    }));
+  };
+
   const validate = () => {
     const nextErrors = {};
-    const start = form.availabilityStart;
-    const end = form.availabilityEnd;
+    const windows = form.availabilityWindows || [];
 
     if (!form.name.trim()) nextErrors.name = 'Resource name is required.';
     if (!form.location.trim()) nextErrors.location = 'Location is required.';
-    if (!start) nextErrors.availabilityStart = 'Opening time is required.';
-    if (!end) nextErrors.availabilityEnd = 'Closing time is required.';
-    if (start && end && start >= end) {
-      nextErrors.availabilityEnd = 'Closing time must be later than opening time.';
+    if (windows.length === 0) {
+      nextErrors.availabilityWindows = 'At least one availability window is required.';
+    }
+    if (windows.some((window) => !window.day || !window.openingTime || !window.closingTime)) {
+      nextErrors.availabilityWindows = 'Each availability window needs a day, opening time, and closing time.';
+    }
+    if (windows.some((window) => window.openingTime && window.closingTime && window.openingTime >= window.closingTime)) {
+      nextErrors.availabilityWindows = 'Each closing time must be later than its opening time.';
     }
     if (form.capacity !== '' && Number(form.capacity) < 1) {
       nextErrors.capacity = 'Capacity must be at least 1.';
@@ -156,6 +193,9 @@ export default function ResourceForm({ initial, onSubmit, onCancel, loading }) {
       imageUrl: existingImages[0] || '',
       imageUrls: existingImages,
       capacity: form.capacity === '' ? null : Number(form.capacity),
+      availabilityStart: form.availabilityWindows[0]?.openingTime || '',
+      availabilityEnd: form.availabilityWindows[0]?.closingTime || '',
+      availabilityWindows: form.availabilityWindows,
     }, imageFiles);
   };
 
@@ -221,31 +261,55 @@ export default function ResourceForm({ initial, onSubmit, onCancel, loading }) {
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-        <div>
-          <label style={labelStyle}>Opening time *</label>
-          <div style={{ position: 'relative' }}>
-            <Clock size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: '#64748b' }} />
-            <input
-              style={{ ...fieldStyle, paddingLeft: '36px' }}
-              type="time"
-              value={form.availabilityStart}
-              onChange={handle('availabilityStart')}
-            />
-          </div>
-          {errors.availabilityStart && <span style={errorStyle}>{errors.availabilityStart}</span>}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <label style={{ ...labelStyle, marginBottom: 0 }}>Availability windows *</label>
+          <button type="button" onClick={addAvailabilityWindow} style={smallActionButton}>
+            <Plus size={15} />
+            Add Window
+          </button>
         </div>
 
-        <div>
-          <label style={labelStyle}>Closing time *</label>
-          <input
-            style={fieldStyle}
-            type="time"
-            value={form.availabilityEnd}
-            onChange={handle('availabilityEnd')}
-          />
-          {errors.availabilityEnd && <span style={errorStyle}>{errors.availabilityEnd}</span>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {form.availabilityWindows.map((window, index) => (
+            <div key={index} style={windowRow}>
+              <select style={fieldStyle} value={window.day} onChange={handleWindowChange(index, 'day')}>
+                {DAY_OPTIONS.map((day) => (
+                  <option key={day.value} value={day.value}>{day.label}</option>
+                ))}
+              </select>
+              <div style={{ position: 'relative' }}>
+                <Clock size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: '#64748b' }} />
+                <input
+                  style={{ ...fieldStyle, paddingLeft: '36px' }}
+                  type="time"
+                  value={window.openingTime}
+                  onChange={handleWindowChange(index, 'openingTime')}
+                />
+              </div>
+              <input
+                style={fieldStyle}
+                type="time"
+                value={window.closingTime}
+                onChange={handleWindowChange(index, 'closingTime')}
+              />
+              <button
+                type="button"
+                title="Remove window"
+                onClick={() => removeAvailabilityWindow(index)}
+                disabled={form.availabilityWindows.length === 1}
+                style={{
+                  ...iconButton,
+                  opacity: form.availabilityWindows.length === 1 ? 0.45 : 1,
+                  cursor: form.availabilityWindows.length === 1 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
         </div>
+        {errors.availabilityWindows && <span style={errorStyle}>{errors.availabilityWindows}</span>}
       </div>
 
       <div>
@@ -352,6 +416,43 @@ const primaryButton = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: '8px',
+};
+
+const smallActionButton = {
+  padding: '7px 10px',
+  borderRadius: '8px',
+  border: '1px solid #99f6e4',
+  background: '#ecfeff',
+  color: '#0f766e',
+  cursor: 'pointer',
+  fontSize: '12px',
+  fontWeight: '800',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+};
+
+const windowRow = {
+  display: 'grid',
+  gridTemplateColumns: '1.2fr 1fr 1fr 38px',
+  gap: '10px',
+  alignItems: 'center',
+  padding: '10px',
+  border: '1px solid #e2e8f0',
+  borderRadius: '10px',
+  background: '#f8fafc',
+};
+
+const iconButton = {
+  width: '38px',
+  height: '38px',
+  borderRadius: '8px',
+  border: '1px solid #fecaca',
+  color: '#b91c1c',
+  background: '#fff',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 };
 
 const uploadBox = {
