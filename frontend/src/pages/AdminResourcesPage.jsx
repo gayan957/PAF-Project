@@ -22,6 +22,7 @@ import {
 } from '../api/resourceApi';
 import ResourceForm from '../components/resources/ResourceForm';
 import StatusBadge from '../components/resources/StatusBadge';
+import { formatAvailabilitySummary } from '../components/resources/resourceAvailability';
 import { getPrimaryResourceImage } from '../components/resources/resourceImages';
 import {
   Bar,
@@ -292,7 +293,7 @@ export default function AdminResourcesPage() {
                     </td>
                     <td style={{ ...tableCell, color: '#475569' }}>{resource.location}</td>
                     <td style={{ ...tableCell, color: '#475569' }}>{resource.capacity || 'N/A'}</td>
-                    <td style={{ ...tableCell, color: '#475569' }}>{resource.availabilityStart} to {resource.availabilityEnd}</td>
+                    <td style={{ ...tableCell, color: '#475569' }}>{formatAvailabilitySummary(resource)}</td>
                     <td style={tableCell}><StatusBadge status={resource.status} /></td>
                     <td style={tableCell}>
                       <div style={{ display: 'flex', gap: '7px' }}>

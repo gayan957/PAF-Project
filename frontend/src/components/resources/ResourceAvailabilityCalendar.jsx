@@ -1,14 +1,8 @@
 import React, { useState } from 'react';
 import { AlertTriangle, CalendarDays } from 'lucide-react';
+import { DAY_OPTIONS, formatDay, getAvailabilityWindows, timeToHour, windowHours } from './resourceAvailability';
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const FULL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const HOURS = Array.from({ length: 24 }, (_, index) => index);
-
-function timeToHour(timeStr) {
-  if (!timeStr) return 0;
-  return Number(timeStr.split(':')[0]);
-}
 
 function formatHour(hour) {
   if (hour === 0) return '12 AM';
@@ -19,14 +13,17 @@ function formatHour(hour) {
 
 export default function ResourceAvailabilityCalendar({ resource }) {
   const [hoveredCell, setHoveredCell] = useState(null);
-  const startHour = timeToHour(resource.availabilityStart);
-  const endHour = timeToHour(resource.availabilityEnd);
+  const windows = getAvailabilityWindows(resource);
   const isActive = resource.status === 'ACTIVE';
 
-  const getSlotStatus = (hour) => {
+  const getSlotStatus = (day, hour) => {
     if (!isActive) return 'inactive';
-    if (hour >= startHour && hour < endHour) return 'open';
-    return 'closed';
+    const isOpen = windows.some((window) =>
+      window.day === day
+      && hour >= timeToHour(window.openingTime)
+      && hour < timeToHour(window.closingTime)
+    );
+    return isOpen ? 'open' : 'closed';
   };
 
   const slotColors = {
@@ -35,7 +32,10 @@ export default function ResourceAvailabilityCalendar({ resource }) {
     inactive: { bg: '#fee2e2', border: '#fca5a5' },
   };
 
-  const dailyHours = Math.max(0, endHour - startHour);
+  const weeklyHours = windows.reduce((total, window) => total + windowHours(window), 0);
+  const earliestOpen = windows.map((window) => window.openingTime).sort()[0] || 'N/A';
+  const sortedClosingTimes = windows.map((window) => window.closingTime).sort();
+  const latestClose = sortedClosingTimes[sortedClosingTimes.length - 1] || 'N/A';
 
   return (
     <div style={{
@@ -57,10 +57,10 @@ export default function ResourceAvailabilityCalendar({ resource }) {
             gap: '8px',
           }}>
             <CalendarDays size={18} color="#0f766e" />
-            Operating Window
+            Operating Windows
           </h3>
           <p style={{ margin: '5px 0 0', fontSize: '13px', color: '#64748b' }}>
-            Standard open hours: {resource.availabilityStart} to {resource.availabilityEnd}
+            {windows.length} configured window{windows.length === 1 ? '' : 's'} across {new Set(windows.map((window) => window.day)).size} day{new Set(windows.map((window) => window.day)).size === 1 ? '' : 's'}
           </p>
         </div>
 
@@ -93,76 +93,72 @@ export default function ResourceAvailabilityCalendar({ resource }) {
         <div style={{ minWidth: '520px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '62px repeat(7, 1fr)', gap: '3px', marginBottom: '4px' }}>
             <div />
-            {DAYS.map((day, index) => (
-              <div key={day} style={{
+            {DAY_OPTIONS.map((day, index) => (
+              <div key={day.value} style={{
                 textAlign: 'center',
                 fontSize: '12px',
                 fontWeight: '800',
                 color: index >= 5 ? '#0f766e' : '#334155',
                 padding: '4px 0',
               }}>
-                {day}
+                {day.short}
               </div>
             ))}
           </div>
 
-          {HOURS.map((hour) => {
-            const status = getSlotStatus(hour);
-            const colors = slotColors[status];
-            const showLabel = hour % 3 === 0;
-
-            return (
-              <div key={hour} style={{
-                display: 'grid',
-                gridTemplateColumns: '62px repeat(7, 1fr)',
-                gap: '3px',
-                marginBottom: '2px',
+          {HOURS.map((hour) => (
+            <div key={hour} style={{
+              display: 'grid',
+              gridTemplateColumns: '62px repeat(7, 1fr)',
+              gap: '3px',
+              marginBottom: '2px',
+            }}>
+              <div style={{
+                fontSize: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                paddingRight: '8px',
+                fontWeight: hour % 3 === 0 ? '700' : '400',
+                color: hour % 3 === 0 ? '#64748b' : '#cbd5e1',
               }}>
-                <div style={{
-                  fontSize: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  paddingRight: '8px',
-                  fontWeight: showLabel ? '700' : '400',
-                  color: showLabel ? '#64748b' : '#cbd5e1',
-                }}>
-                  {showLabel ? formatHour(hour) : ''}
-                </div>
-
-                {DAYS.map((day, dayIndex) => {
-                  const cellKey = `${day}-${hour}`;
-                  const isHovered = hoveredCell === cellKey;
-                  const isWeekend = dayIndex >= 5;
-                  const title = status === 'open'
-                    ? `${FULL_DAYS[dayIndex]} ${formatHour(hour)} - open`
-                    : status === 'closed'
-                      ? `${FULL_DAYS[dayIndex]} ${formatHour(hour)} - outside operating hours`
-                      : `${FULL_DAYS[dayIndex]} ${formatHour(hour)} - facility unavailable`;
-
-                  return (
-                    <div
-                      key={day}
-                      onMouseEnter={() => setHoveredCell(cellKey)}
-                      onMouseLeave={() => setHoveredCell(null)}
-                      title={title}
-                      style={{
-                        height: '16px',
-                        borderRadius: '4px',
-                        background: isHovered && status === 'open'
-                          ? '#86efac'
-                          : isWeekend && status === 'open'
-                            ? '#d1fae5'
-                            : colors.bg,
-                        border: `1px solid ${isHovered ? '#4ade80' : colors.border}`,
-                        transition: 'all 0.1s ease',
-                      }}
-                    />
-                  );
-                })}
+                {hour % 3 === 0 ? formatHour(hour) : ''}
               </div>
-            );
-          })}
+
+              {DAY_OPTIONS.map((day, dayIndex) => {
+                const status = getSlotStatus(day.value, hour);
+                const colors = slotColors[status];
+                const cellKey = `${day.value}-${hour}`;
+                const isHovered = hoveredCell === cellKey;
+                const isWeekend = dayIndex >= 5;
+                const title = status === 'open'
+                  ? `${formatDay(day.value)} ${formatHour(hour)} - open`
+                  : status === 'closed'
+                    ? `${formatDay(day.value)} ${formatHour(hour)} - outside operating windows`
+                    : `${formatDay(day.value)} ${formatHour(hour)} - facility unavailable`;
+
+                return (
+                  <div
+                    key={day.value}
+                    onMouseEnter={() => setHoveredCell(cellKey)}
+                    onMouseLeave={() => setHoveredCell(null)}
+                    title={title}
+                    style={{
+                      height: '16px',
+                      borderRadius: '4px',
+                      background: isHovered && status === 'open'
+                        ? '#86efac'
+                        : isWeekend && status === 'open'
+                          ? '#d1fae5'
+                          : colors.bg,
+                      border: `1px solid ${isHovered ? '#4ade80' : colors.border}`,
+                      transition: 'all 0.1s ease',
+                    }}
+                  />
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -176,10 +172,10 @@ export default function ResourceAvailabilityCalendar({ resource }) {
         gap: '10px',
         fontSize: '13px',
       }}>
-        <Summary label="Daily hours" value={`${dailyHours}h`} />
-        <Summary label="Weekly hours" value={`${dailyHours * 7}h`} />
-        <Summary label="Opens" value={resource.availabilityStart} />
-        <Summary label="Closes" value={resource.availabilityEnd} />
+        <Summary label="Windows" value={windows.length} />
+        <Summary label="Weekly hours" value={`${weeklyHours}h`} />
+        <Summary label="Earliest open" value={earliestOpen} />
+        <Summary label="Latest close" value={latestClose} />
       </div>
     </div>
   );

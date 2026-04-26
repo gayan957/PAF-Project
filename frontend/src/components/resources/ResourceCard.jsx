@@ -2,6 +2,7 @@ import React from 'react';
 import { Building2, Clock, DoorOpen, FlaskConical, MapPin, Package, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import StatusBadge from './StatusBadge';
+import { formatAvailabilitySummary } from './resourceAvailability';
 import { getPrimaryResourceImage } from './resourceImages';
 
 const typeMeta = {
@@ -104,9 +105,7 @@ export default function ResourceCard({ resource, onBook }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', marginTop: 'auto' }}>
           <Fact icon={MapPin} text={resource.location} />
           {resource.capacity && <Fact icon={Users} text={`${resource.capacity} capacity`} />}
-          {resource.availabilityStart && (
-            <Fact icon={Clock} text={`${resource.availabilityStart} to ${resource.availabilityEnd}`} />
-          )}
+          <Fact icon={Clock} text={formatAvailabilitySummary(resource)} />
         </div>
 
         {/* Action buttons */}

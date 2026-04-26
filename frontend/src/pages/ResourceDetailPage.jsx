@@ -23,6 +23,7 @@ import { deleteResource, getResourceById, updateResourceStatus } from '../api/re
 import { getUpcomingBookingsForResource } from '../api/bookingApi';
 import ResourceAvailabilityCalendar from '../components/resources/ResourceAvailabilityCalendar';
 import StatusBadge from '../components/resources/StatusBadge';
+import { formatAvailabilitySummary, getAvailabilityWindows, windowHours } from '../components/resources/resourceAvailability';
 import { getResourceImageGallery } from '../components/resources/resourceImages';
 
 const typeMeta = {
@@ -79,6 +80,10 @@ export default function ResourceDetailPage() {
     () => getResourceImageGallery(resource),
     [resource]
   );
+  const availabilityWindows = useMemo(
+    () => getAvailabilityWindows(resource),
+    [resource]
+  );
 
   useEffect(() => {
     setSelectedImageIndex(0);
@@ -119,6 +124,7 @@ export default function ResourceDetailPage() {
 
   const TypeIcon = meta.icon;
   const transitions = allowedTransitions[resource.status] || [];
+  const weeklyHours = availabilityWindows.reduce((total, window) => total + windowHours(window), 0);
 
   return (
     <div style={{ padding: '24px', maxWidth: '1140px', margin: '0 auto' }}>
@@ -256,7 +262,7 @@ export default function ResourceDetailPage() {
               {resource.building && <InfoItem icon={Building2} label="Building" value={resource.building} />}
               <InfoItem icon={TypeIcon} label="Type" value={meta.label} />
               {resource.capacity && <InfoItem icon={Users} label="Capacity" value={`${resource.capacity} people`} />}
-              <InfoItem icon={Clock} label="Operating Hours" value={`${resource.availabilityStart} to ${resource.availabilityEnd}`} />
+              <InfoItem icon={Clock} label="Operating Windows" value={formatAvailabilitySummary(resource, 3)} />
               {resource.createdBy && <InfoItem icon={ShieldCheck} label="Added By" value={resource.createdBy} />}
             </div>
 
@@ -432,12 +438,8 @@ export default function ResourceDetailPage() {
               <SummaryRow label="Type" value={meta.label} />
               <SummaryRow label="Status" value={<StatusBadge status={resource.status} />} />
               {resource.capacity && <SummaryRow label="Capacity" value={`${resource.capacity} seats`} />}
-              <SummaryRow label="Opens" value={resource.availabilityStart} />
-              <SummaryRow label="Closes" value={resource.availabilityEnd} />
-              <SummaryRow
-                label="Daily Hours"
-                value={`${Math.max(0, timeToHour(resource.availabilityEnd) - timeToHour(resource.availabilityStart))}h`}
-              />
+              <SummaryRow label="Windows" value={availabilityWindows.length} />
+              <SummaryRow label="Weekly Hours" value={`${weeklyHours}h`} />
             </div>
           </Panel>
 
@@ -481,11 +483,6 @@ export default function ResourceDetailPage() {
 }
 
 // ─── Small helpers ───────────────────────────────────────────────────────────
-
-function timeToHour(timeStr) {
-  if (!timeStr) return 0;
-  return Number(timeStr.split(':')[0]);
-}
 
 function Panel({ title, icon: Icon, children }) {
   return (
