@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, Calendar, CreditCard, Award, HelpCircle, LogOut, Users, Ticket as TicketIcon, User, Building2 } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Calendar, CalendarCheck, CreditCard, Award, HelpCircle, LogOut, Users, Ticket as TicketIcon, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
@@ -31,6 +31,10 @@ const Sidebar = () => {
                         <NavLink to="/admin/users" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                             <Users size={20} />
                             <span>User Management</span>
+                        </NavLink>
+                        <NavLink to="/admin/bookings" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <CalendarCheck size={20} />
+                            <span>Booking Management</span>
                         </NavLink>
                         <NavLink to="/tickets" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                             <TicketIcon size={20} />
@@ -70,9 +74,9 @@ const Sidebar = () => {
                             <BookOpen size={20} />
                             <span>Courses</span>
                         </NavLink>
-                        <NavLink to="/resources" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-                            <Building2 size={20} />
-                            <span>Resources</span>
+                        <NavLink to="/bookings" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <CalendarCheck size={20} />
+                            <span>My Bookings</span>
                         </NavLink>
                         <NavLink to="/tickets" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                             <Calendar size={20} />
