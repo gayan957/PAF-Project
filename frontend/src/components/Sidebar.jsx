@@ -79,6 +79,10 @@ const Sidebar = () => {
                             <CalendarCheck size={20} />
                             <span>My Bookings</span>
                         </NavLink>
+                        <NavLink to="/resources" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <Building2 size={20} />
+                            <span>Resources</span>
+                        </NavLink>
                         <NavLink to="/tickets" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                             <Calendar size={20} />
                             <span>Tickets / Schedule</span>
