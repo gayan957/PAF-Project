@@ -87,18 +87,6 @@ const Sidebar = () => {
                             <Calendar size={20} />
                             <span>Tickets / Schedule</span>
                         </NavLink>
-                        <NavLink to="/finances" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-                            <CreditCard size={20} />
-                            <span>Finances</span>
-                        </NavLink>
-                        <NavLink to="/results" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-                            <Award size={20} />
-                            <span>Results</span>
-                        </NavLink>
-                        <NavLink to="/help" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-                            <HelpCircle size={20} />
-                            <span>Help</span>
-                        </NavLink>
                         <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                             <User size={20} />
                             <span>Profile</span>
