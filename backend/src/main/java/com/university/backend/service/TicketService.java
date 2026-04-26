@@ -2,12 +2,14 @@ package com.university.backend.service;
 
 import com.university.backend.dto.TicketRequest;
 import com.university.backend.model.Attachment;
+import com.university.backend.model.NotificationType;
 import com.university.backend.model.Ticket;
 import com.university.backend.model.TicketStatus;
 import com.university.backend.model.User;
 import com.university.backend.repository.AttachmentRepository;
 import com.university.backend.repository.TicketRepository;
 import com.university.backend.repository.UserRepository;
+import com.university.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ public class TicketService {
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
     private final AttachmentRepository attachmentRepository;
+    private final NotificationService notificationService;
 
     @Value("${file.upload-dir:uploads}")
     private String uploadDir;
@@ -52,7 +55,17 @@ public class TicketService {
             ticket.setAssignedTechnician(technician);
         }
 
-        return ticketRepository.save(ticket);
+        Ticket saved = ticketRepository.save(ticket);
+
+        notificationService.sendNotificationToAllAdmins(
+            NotificationType.ADMIN_TICKET_CREATED,
+            "New Ticket Submitted",
+            creator.getName() + " submitted a new " + request.getPriority() + " priority ticket: \"" +
+                request.getCategory() + "\".",
+            saved.getId(), "TICKET"
+        );
+
+        return saved;
     }
 
     public List<Ticket> getAllTickets() {
@@ -90,8 +103,18 @@ public class TicketService {
         } else {
             ticket.setAssignedTechnician(null);
         }
-        
-        return ticketRepository.save(ticket);
+
+        Ticket saved = ticketRepository.save(ticket);
+
+        notificationService.sendNotificationToAllAdmins(
+            NotificationType.ADMIN_TICKET_UPDATED,
+            "Ticket Updated",
+            ticket.getCreatedBy().getName() + " updated ticket \"" + saved.getCategory() +
+                "\" (status: " + saved.getStatus().name().replace('_', ' ') + ").",
+            saved.getId(), "TICKET"
+        );
+
+        return saved;
     }
 
     @Transactional
@@ -104,13 +127,22 @@ public class TicketService {
     public Ticket updateStatus(Long id, TicketStatus status) {
         Ticket ticket = getTicketById(id);
 
-        
         if ((status == TicketStatus.RESOLVED || status == TicketStatus.CLOSED) && ticket.getResolvedAt() == null) {
             ticket.setResolvedAt(java.time.LocalDateTime.now());
         }
-        
+
         ticket.setStatus(status);
-        return ticketRepository.save(ticket);
+        Ticket saved = ticketRepository.save(ticket);
+
+        notificationService.sendNotification(
+            saved.getCreatedBy(),
+            NotificationType.TICKET_STATUS_UPDATED,
+            "Ticket Status Updated",
+            "Your ticket \"" + saved.getCategory() + "\" status changed to " + status.name().replace('_', ' '),
+            saved.getId(), "TICKET"
+        );
+
+        return saved;
     }
 
     @Transactional
@@ -119,27 +151,46 @@ public class TicketService {
         User technician = userRepository.findById(technicianId)
                 .orElseThrow(() -> new RuntimeException("Technician not found with id: " + technicianId));
         ticket.setAssignedTechnician(technician);
-        
+
         if (ticket.getStatus() == TicketStatus.OPEN) {
             ticket.setStatus(TicketStatus.IN_PROGRESS);
         }
-        
-        return ticketRepository.save(ticket);
+
+        Ticket saved = ticketRepository.save(ticket);
+
+        notificationService.sendNotification(
+            technician,
+            NotificationType.TICKET_ASSIGNED,
+            "New Ticket Assigned",
+            "Ticket \"" + saved.getCategory() + "\" has been assigned to you.",
+            saved.getId(), "TICKET"
+        );
+
+        return saved;
     }
 
     @Transactional
     public Ticket resolveTicket(Long id, String notes) {
         Ticket ticket = getTicketById(id);
 
-        
         ticket.setStatus(TicketStatus.RESOLVED);
         ticket.setResolutionNotes(notes);
-        
+
         if (ticket.getResolvedAt() == null) {
             ticket.setResolvedAt(java.time.LocalDateTime.now());
         }
-        
-        return ticketRepository.save(ticket);
+
+        Ticket saved = ticketRepository.save(ticket);
+
+        notificationService.sendNotification(
+            saved.getCreatedBy(),
+            NotificationType.TICKET_STATUS_UPDATED,
+            "Ticket Resolved",
+            "Your ticket \"" + saved.getCategory() + "\" has been resolved.",
+            saved.getId(), "TICKET"
+        );
+
+        return saved;
     }
 
     @Transactional

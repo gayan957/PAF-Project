@@ -1,10 +1,12 @@
 package com.university.backend.service;
 
 import com.university.backend.model.Comment;
+import com.university.backend.model.NotificationType;
 import com.university.backend.model.Ticket;
 import com.university.backend.model.User;
 import com.university.backend.repository.CommentRepository;
 import com.university.backend.repository.TicketRepository;
+import com.university.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,7 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final TicketRepository ticketRepository;
+    private final NotificationService notificationService;
 
     public List<Comment> getCommentsByTicket(Long ticketId) {
         Ticket ticket = ticketRepository.findById(ticketId)
@@ -45,7 +48,36 @@ public class CommentService {
             ticketRepository.save(ticket);
         }
         
-        return commentRepository.save(comment);
+        Comment saved = commentRepository.save(comment);
+
+        // Notify the other party: if commenter is the ticket creator, notify the assigned technician; otherwise notify the creator
+        boolean commenterIsCreator = user.getId().equals(ticket.getCreatedBy().getId());
+        if (commenterIsCreator && ticket.getAssignedTechnician() != null) {
+            notificationService.sendNotification(
+                ticket.getAssignedTechnician(),
+                NotificationType.TICKET_COMMENT_ADDED,
+                "New Comment on Ticket",
+                user.getName() + " commented on ticket \"" + ticket.getCategory() + "\".",
+                ticket.getId(), "TICKET"
+            );
+        } else if (!commenterIsCreator) {
+            notificationService.sendNotification(
+                ticket.getCreatedBy(),
+                NotificationType.TICKET_COMMENT_ADDED,
+                "New Comment on Your Ticket",
+                user.getName() + " commented on your ticket \"" + ticket.getCategory() + "\".",
+                ticket.getId(), "TICKET"
+            );
+        }
+
+        notificationService.sendNotificationToAllAdmins(
+            NotificationType.ADMIN_COMMENT_ADDED,
+            "New Comment on Ticket",
+            user.getName() + " commented on ticket \"" + ticket.getCategory() + "\".",
+            ticket.getId(), "TICKET"
+        );
+
+        return saved;
     }
 
     @Transactional

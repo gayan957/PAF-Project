@@ -1,6 +1,7 @@
 import React from 'react';
-import { Bell, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import NotificationBell from './notifications/NotificationBell';
 import './TopHeader.css';
 
 const TopHeader = ({ title = "Dashboard" }) => {
@@ -16,10 +17,7 @@ const TopHeader = ({ title = "Dashboard" }) => {
             </div>
             
             <div className="header-right">
-                <button className="icon-btn relative">
-                    <Bell size={20} />
-                    <span className="notification-dot"></span>
-                </button>
+                <NotificationBell />
                 
                 {user && (
                     <div className="user-profile">

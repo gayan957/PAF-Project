@@ -1,0 +1,18 @@
+package com.university.backend.model;
+
+public enum NotificationType {
+    // User-facing
+    BOOKING_APPROVED,
+    BOOKING_REJECTED,
+    BOOKING_CANCELLED,
+    TICKET_STATUS_UPDATED,
+    TICKET_ASSIGNED,
+    TICKET_COMMENT_ADDED,
+
+    // Admin-facing
+    ADMIN_BOOKING_CREATED,
+    ADMIN_BOOKING_CANCELLED,
+    ADMIN_TICKET_CREATED,
+    ADMIN_TICKET_UPDATED,
+    ADMIN_COMMENT_ADDED
+}

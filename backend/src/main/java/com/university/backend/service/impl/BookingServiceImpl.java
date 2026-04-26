@@ -7,8 +7,11 @@ import com.university.backend.dto.BookingStatusUpdateDTO;
 import com.university.backend.model.*;
 import com.university.backend.repository.BookingRepository;
 import com.university.backend.repository.ResourceRepository;
+import com.university.backend.repository.UserRepository;
 import com.university.backend.service.BookingService;
+import com.university.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -27,6 +31,8 @@ public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
     private final ResourceRepository resourceRepository;
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Override
     public BookingResponseDTO createBooking(BookingRequestDTO request, String userEmail, String userName) {
@@ -79,7 +85,17 @@ public class BookingServiceImpl implements BookingService {
             .status(BookingStatus.PENDING)
             .build();
 
-        return toDTO(bookingRepository.save(booking));
+        BookingResponseDTO result = toDTO(bookingRepository.save(booking));
+
+        notificationService.sendNotificationToAllAdmins(
+            NotificationType.ADMIN_BOOKING_CREATED,
+            "New Booking Request",
+            userName + " requested \"" + resource.getName() + "\" from " +
+                request.getStartTime().toLocalDate() + " to " + request.getEndTime().toLocalDate() + ".",
+            result.getId(), "BOOKING"
+        );
+
+        return result;
     }
 
     @Override
@@ -105,7 +121,17 @@ public class BookingServiceImpl implements BookingService {
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
-        return toDTO(bookingRepository.save(booking));
+        BookingResponseDTO result = toDTO(bookingRepository.save(booking));
+
+        notificationService.sendNotificationToAllAdmins(
+            NotificationType.ADMIN_BOOKING_CANCELLED,
+            "Booking Cancelled",
+            booking.getUserName() + " cancelled their booking for \"" +
+                booking.getResource().getName() + "\".",
+            booking.getId(), "BOOKING"
+        );
+
+        return result;
     }
 
     @Override
@@ -141,7 +167,20 @@ public class BookingServiceImpl implements BookingService {
         booking.setReviewedBy(adminEmail);
         booking.setReviewedAt(LocalDateTime.now());
 
-        return toDTO(bookingRepository.save(booking));
+        BookingResponseDTO result = toDTO(bookingRepository.save(booking));
+
+        userRepository.findByEmail(booking.getUserEmail()).ifPresentOrElse(user ->
+            notificationService.sendNotification(
+                user,
+                NotificationType.BOOKING_APPROVED,
+                "Booking Approved",
+                "Your booking for \"" + booking.getResource().getName() + "\" has been approved.",
+                booking.getId(), "BOOKING"
+            ),
+            () -> log.warn("Could not notify: user not found for email {}", booking.getUserEmail())
+        );
+
+        return result;
     }
 
     @Override
@@ -163,7 +202,20 @@ public class BookingServiceImpl implements BookingService {
         booking.setReviewedBy(adminEmail);
         booking.setReviewedAt(LocalDateTime.now());
 
-        return toDTO(bookingRepository.save(booking));
+        BookingResponseDTO result = toDTO(bookingRepository.save(booking));
+
+        userRepository.findByEmail(booking.getUserEmail()).ifPresentOrElse(user ->
+            notificationService.sendNotification(
+                user,
+                NotificationType.BOOKING_REJECTED,
+                "Booking Rejected",
+                "Your booking for \"" + booking.getResource().getName() + "\" was rejected. Reason: " + reason,
+                booking.getId(), "BOOKING"
+            ),
+            () -> log.warn("Could not notify: user not found for email {}", booking.getUserEmail())
+        );
+
+        return result;
     }
 
     @Override
