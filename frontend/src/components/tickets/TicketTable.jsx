@@ -5,13 +5,29 @@ import { Eye, AlertTriangle } from 'lucide-react';
 const TicketTable = ({ tickets, renderActions }) => {
     const navigate = useNavigate();
 
-    const getStatusClass = (status) => {
-        return `status-badge ${status.toLowerCase()}`;
+    const getStatusStyle = (status) => {
+        const config = {
+            OPEN: { bg: '#fee2e2', color: '#991b1b', border: '#fecaca' },
+            IN_PROGRESS: { bg: '#e0f2fe', color: '#075985', border: '#bae6fd' },
+            RESOLVED: { bg: '#dcfce7', color: '#166534', border: '#bbf7d0' },
+            CLOSED: { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' },
+        };
+        const style = config[status] || config.CLOSED;
+        return {
+            padding: '4px 10px',
+            borderRadius: '999px',
+            fontSize: '11px',
+            fontWeight: '800',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: style.bg,
+            color: style.color,
+            border: `1px solid ${style.border}`,
+            whiteSpace: 'nowrap',
+            textTransform: 'uppercase'
+        };
     };
-
-    if (!tickets || tickets.length === 0) {
-        return <div className="text-muted" style={{ textAlign: 'center', padding: '2rem' }}>No tickets found.</div>;
-    }
 
     const isOverdue = (ticket) => {
         if (!ticket.expectedResolutionTime) return false;
@@ -21,44 +37,44 @@ const TicketTable = ({ tickets, renderActions }) => {
     };
 
     return (
-        <div style={{
-            background: 'rgba(30, 41, 59, 0.7)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: '1rem',
-            overflow: 'hidden',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-            transition: 'opacity 0.2s'
-        }}>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                     <thead>
-                        <tr style={{ background: 'rgba(99,102,241,0.1)', borderBottom: '1px solid rgba(99,102,241,0.2)' }}>
-                            <th style={{ padding: '1rem 1.25rem', color: '#a5b4fc', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>ID</th>
-                            <th style={{ padding: '1rem 1.25rem', color: '#a5b4fc', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>Category</th>
-                            <th style={{ padding: '1rem 1.25rem', color: '#a5b4fc', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>Description</th>
-                            <th style={{ padding: '1rem 1.25rem', color: '#a5b4fc', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>Priority</th>
-                            <th style={{ padding: '1rem 1.25rem', color: '#a5b4fc', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>Status</th>
-                            <th style={{ padding: '1rem 1.25rem', color: '#a5b4fc', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>Created</th>
-                            <th style={{ padding: '1rem 1.25rem', color: '#a5b4fc', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Actions</th>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                            {['ID', 'Category', 'Description', 'Priority', 'Status', 'Created', 'Actions'].map((heading) => (
+                                <th key={heading} style={{
+                                    padding: '12px 16px',
+                                    textAlign: heading === 'Actions' ? 'right' : 'left',
+                                    fontWeight: '850',
+                                    color: '#334155',
+                                    fontSize: '12px',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0',
+                                }}>
+                                    {heading}
+                                </th>
+                            ))}
                         </tr>
                     </thead>
                     <tbody>
-                        {tickets.map((ticket, index) => (
-                            <tr key={ticket.id} 
-                                style={{ 
-                                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                                    transition: 'background 0.15s',
-                                    cursor: 'default'
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                            >
-                                <td style={{ padding: '1rem 1.25rem', color: '#475569', fontSize: '0.85rem', fontFamily: 'monospace' }}>#{ticket.id}</td>
-                                <td style={{ padding: '1rem 1.25rem' }}>
-                                    <span className="ticket-category" style={{ fontSize: '0.7rem' }}>{ticket.category}</span>
+                        {tickets.map((ticket) => (
+                            <tr key={ticket.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '13px', fontFamily: 'monospace' }}>#{ticket.id}</td>
+                                <td style={{ padding: '14px 16px' }}>
+                                    <span style={{ 
+                                        fontSize: '11px', 
+                                        fontWeight: '800', 
+                                        color: '#0f766e',
+                                        background: '#0f766e14',
+                                        padding: '4px 8px',
+                                        borderRadius: '6px',
+                                        textTransform: 'uppercase'
+                                    }}>
+                                        {ticket.category}
+                                    </span>
                                 </td>
-                                <td style={{ padding: '1rem 1.25rem', color: '#f1f5f9', fontWeight: '500', fontSize: '0.9rem', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <td style={{ padding: '14px 16px', color: '#0f172a', fontWeight: '800', fontSize: '14px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         {ticket.description}
                                         {isOverdue(ticket) && (
@@ -66,13 +82,12 @@ const TicketTable = ({ tickets, renderActions }) => {
                                                 display: 'inline-flex', 
                                                 alignItems: 'center', 
                                                 gap: '0.25rem', 
-                                                background: 'rgba(239, 68, 68, 0.1)', 
+                                                background: '#fee2e2', 
                                                 color: '#ef4444', 
-                                                padding: '0.15rem 0.4rem', 
-                                                borderRadius: '0.25rem', 
-                                                fontSize: '0.65rem', 
-                                                fontWeight: 'bold',
-                                                border: '1px solid rgba(239, 68, 68, 0.2)'
+                                                padding: '2px 8px', 
+                                                borderRadius: '999px', 
+                                                fontSize: '10px', 
+                                                fontWeight: '850',
                                             }}>
                                                 <AlertTriangle size={10} />
                                                 OVERDUE
@@ -80,45 +95,50 @@ const TicketTable = ({ tickets, renderActions }) => {
                                         )}
                                     </div>
                                 </td>
-                                <td style={{ padding: '1rem 1.25rem' }}>
+                                <td style={{ padding: '14px 16px' }}>
                                     <span style={{ 
-                                        color: ticket.priority === 'HIGH' || ticket.priority === 'URGENT' ? 'var(--danger)' : 
-                                               ticket.priority === 'MEDIUM' ? '#f59e0b' : 'var(--success)',
-                                        fontWeight: '600',
-                                        fontSize: '0.8rem'
+                                        color: ticket.priority === 'HIGH' || ticket.priority === 'URGENT' ? '#dc2626' : 
+                                               ticket.priority === 'MEDIUM' ? '#d97706' : '#16a34a',
+                                        fontWeight: '800',
+                                        fontSize: '11px',
+                                        background: ticket.priority === 'HIGH' || ticket.priority === 'URGENT' ? '#fef2f2' : 
+                                                   ticket.priority === 'MEDIUM' ? '#fffbeb' : '#f0fdf4',
+                                        padding: '4px 10px',
+                                        borderRadius: '999px',
+                                        border: `1px solid ${ticket.priority === 'HIGH' || ticket.priority === 'URGENT' ? '#fecaca' : 
+                                               ticket.priority === 'MEDIUM' ? '#fde68a' : '#bbf7d0'}`,
+                                        textTransform: 'uppercase'
                                     }}>
                                         {ticket.priority}
                                     </span>
                                 </td>
-                                <td style={{ padding: '1rem 1.25rem' }}>
-                                    <span className={getStatusClass(ticket.status)}>
+                                <td style={{ padding: '14px 16px' }}>
+                                    <span style={getStatusStyle(ticket.status)}>
                                         {ticket.status.replace('_', ' ')}
                                     </span>
                                 </td>
-                                <td style={{ padding: '1rem 1.25rem', color: '#94a3b8', fontSize: '0.875rem' }}>
+                                <td style={{ padding: '14px 16px', color: '#475569', fontSize: '13px' }}>
                                     {new Date(ticket.createdAt).toLocaleDateString()}
                                 </td>
-                                <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                                    <div style={{ display: 'flex', gap: '7px', justifyContent: 'flex-end' }}>
                                         <button 
                                             onClick={() => navigate(`/tickets/${ticket.id}`)}
+                                            title="View Details"
                                             style={{
-                                                background: 'rgba(99,102,241,0.1)',
-                                                border: '1px solid rgba(99,102,241,0.25)',
-                                                color: '#a5b4fc',
-                                                padding: '0.45rem 0.6rem',
-                                                borderRadius: '0.5rem',
+                                                width: '34px',
+                                                height: '32px',
+                                                borderRadius: '8px',
+                                                border: '1px solid #47556924',
+                                                color: '#475569',
+                                                background: '#4755690d',
                                                 cursor: 'pointer',
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                transition: 'all 0.2s',
                                             }}
-                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.25)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)'; }}
-                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.1)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.25)'; }}
-                                            title="View Details"
                                         >
-                                            <Eye size={15} />
+                                            <Eye size={16} />
                                         </button>
                                         {renderActions && renderActions(ticket)}
                                     </div>

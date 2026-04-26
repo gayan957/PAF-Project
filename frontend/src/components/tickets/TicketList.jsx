@@ -39,7 +39,7 @@ const TicketList = ({ tickets, renderActions }) => {
             {tickets.map(ticket => (
                 <div 
                     key={ticket.id} 
-                    className="glass-panel ticket-card"
+                    className="ticket-card"
                     onClick={() => navigate(`/tickets/${ticket.id}`)}
                     style={{ cursor: 'pointer' }}
                 >
@@ -96,7 +96,7 @@ const TicketList = ({ tickets, renderActions }) => {
                     )}
 
                     {ticket.attachments && ticket.attachments.length > 0 && (
-                        <div className="ticket-attachments-preview">
+                        <div className="ticket-attachments-preview" style={{ color: 'black'}}>
                             {ticket.attachments.map(att => (
                                 <div key={att.id} className="attachment-badge">
                                     {att.fileName.includes('_') ? att.fileName.substring(att.fileName.indexOf('_') + 1) : att.fileName}
