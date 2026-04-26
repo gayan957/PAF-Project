@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { Building2 } from "lucide-react";
 import { LayoutDashboard, BookOpen, Calendar, CalendarCheck, CreditCard, Award, HelpCircle, LogOut, Users, Ticket as TicketIcon, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
