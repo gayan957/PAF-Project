@@ -35,8 +35,7 @@ const AdminBookingsPage = () => {
     const [statusFilter, setStatusFilter]     = useState('');
     const [resourceQuery, setResourceQuery]   = useState('');
     const [userQuery, setUserQuery]           = useState('');
-    const [fromDate, setFromDate]             = useState('');
-    const [toDate, setToDate]                 = useState('');
+    const [selectedDateFilter, setSelectedDateFilter] = useState('');
     const [rejectId, setRejectId]             = useState(null);
     const [rejectReason, setRejectReason]     = useState('');
     const [actionLoading, setActionLoading]   = useState(false);
@@ -46,7 +45,7 @@ const AdminBookingsPage = () => {
 
     useEffect(() => {
         loadBookings();
-    }, [statusFilter, resourceQuery, userQuery, fromDate, toDate]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [statusFilter, resourceQuery, userQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const loadStats = async () => {
         try {
@@ -64,8 +63,6 @@ const AdminBookingsPage = () => {
             if (statusFilter)  params.status       = statusFilter;
             if (resourceQuery) params.resourceName = resourceQuery;
             if (userQuery)     params.userEmail     = userQuery;
-            if (fromDate)      params.from          = `${fromDate}:00`;
-            if (toDate)        params.to            = `${toDate}:00`;
             const res = await getAllBookings(params);
             setBookings(res.data?.data?.content || []);
         } catch (e) {
@@ -114,6 +111,23 @@ const AdminBookingsPage = () => {
     };
 
     const pendingCount = bookings.filter(b => b.status === 'PENDING').length;
+
+    const getFilteredBookings = () => {
+        if (!selectedDateFilter) return bookings;
+        
+        const selectedDate = new Date(selectedDateFilter);
+        const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 0, 0, 0);
+        const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 23, 59, 59);
+        
+        return bookings.filter(booking => {
+            const bookingStart = new Date(booking.startTime);
+            const bookingEnd = new Date(booking.endTime);
+            // Show bookings that overlap with the selected date
+            return bookingStart < endOfDay && bookingEnd > startOfDay;
+        });
+    };
+
+    const filteredBookings = getFilteredBookings();
 
     return (
         <div className="bookings-page">
@@ -205,25 +219,52 @@ const AdminBookingsPage = () => {
                     placeholder="Search by user email"
                 />
                 <input
-                    type="datetime-local"
-                    value={fromDate}
-                    onChange={e => setFromDate(e.target.value)}
-                    title="From date"
+                    type="date"
+                    value={selectedDateFilter}
+                    onChange={e => setSelectedDateFilter(e.target.value)}
+                    title="Filter by date"
+                    placeholder="Filter by date"
                 />
-                <input
-                    type="datetime-local"
-                    value={toDate}
-                    onChange={e => setToDate(e.target.value)}
-                    title="To date"
-                />
+                {selectedDateFilter && (
+                    <button
+                        type="button"
+                        onClick={() => setSelectedDateFilter('')}
+                        style={{
+                            background: '#f3f4f6',
+                            border: '1px solid #d1d5db',
+                            color: '#374151',
+                            borderRadius: '0.75rem',
+                            padding: '0.8rem 1rem',
+                            cursor: 'pointer',
+                            fontSize: '0.95rem',
+                            fontWeight: '500',
+                        }}
+                    >
+                        Clear Date
+                    </button>
+                )}
             </div>
+
+            {selectedDateFilter && (
+                <div style={{
+                    padding: '0.75rem 1rem',
+                    background: '#f0fdf4',
+                    border: '1px solid #bbf7d0',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.9rem',
+                    color: '#15803d',
+                    marginBottom: '1rem'
+                }}>
+                    ✓ Showing {filteredBookings.length} booking(s) for {selectedDateFilter}
+                </div>
+            )}
 
             {loading ? (
                 <div className="loader"></div>
-            ) : bookings.length === 0 ? (
+            ) : filteredBookings.length === 0 ? (
                 <div className="no-data-card">
                     <Calendar size={40} />
-                    <p>No bookings found{statusFilter ? ` with status "${statusFilter}"` : ''}.</p>
+                    <p>No bookings found{statusFilter ? ` with status "${statusFilter}"` : ''}{selectedDateFilter ? ` on ${selectedDateFilter}` : ''}.</p>
                 </div>
             ) : (
                 <div className="bookings-table-wrap" style={{ marginTop: '0.5rem' }}>
@@ -242,7 +283,7 @@ const AdminBookingsPage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {bookings.map(b => {
+                            {filteredBookings.map(b => {
                                 const s = STATUS_COLORS[b.status] || {};
                                 return (
                                     <tr key={b.id}>

@@ -190,6 +190,16 @@
   margin-bottom: 1.5rem;
 }
 
+.booking-datetime-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.booking-availability-row {
+  margin-bottom: 1.5rem;
+}
+
 .booking-search-row input {
   width: 100%;
   min-height: 44px;
@@ -202,6 +212,23 @@
 }
 
 .booking-search-row input:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+.booking-datetime-inputs input,
+.booking-datetime-inputs button {
+  min-height: 44px;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 0.8rem 1rem;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background: #fff;
+}
+
+.booking-datetime-inputs input:focus {
   outline: none;
   border-color: #10b981;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);

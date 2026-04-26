@@ -98,6 +98,7 @@ const UserBookingsPage = () => {
 
     const types = [...new Set(resources.map(r => r.type))];
     const minCapacityValue = parseInt(minCapacity, 10);
+    
     const filteredResources = resources.filter(resource => {
         const matchesType     = !typeFilter || resource.type === typeFilter;
         const matchesLocation = !locationFilter ||
@@ -186,6 +187,8 @@ const UserBookingsPage = () => {
                             placeholder="Min capacity"
                         />
                     </div>
+
+
 
                     {filteredResources.length === 0 ? (
                         <p className="no-data">No active resources match your filters.</p>
