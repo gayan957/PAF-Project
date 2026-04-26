@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getResourceById, getQrUrl, updateResourceStatus, deleteResource } from '../api/resourceApi';
 import StatusBadge from '../components/resources/StatusBadge';
 
-import { useAuth } from '../context/AuthContext'; // add this import at top
+import { useAuth } from '../context/AuthContext'; 
 
 export default function ResourceDetailPage() {
   const { id } = useParams();
