@@ -7,6 +7,8 @@ import com.university.backend.model.BookingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDateTime;
+
 public interface BookingService {
         // USER: create a new booking request
     BookingResponseDTO createBooking(BookingRequestDTO request, String userEmail, String userName);
@@ -17,8 +19,15 @@ public interface BookingService {
     // USER: cancel my own booking
     BookingResponseDTO cancelBooking(Long bookingId, String userEmail);
 
-    // ADMIN: get all bookings with optional status filter
-    Page<BookingResponseDTO> getAllBookings(BookingStatus status, Pageable pageable);
+    // ADMIN: get all bookings with optional filters
+    Page<BookingResponseDTO> getAllBookings(
+        BookingStatus status,
+        String resourceName,
+        String userEmail,
+        LocalDateTime from,
+        LocalDateTime to,
+        Pageable pageable
+    );
 
     // ADMIN: approve a booking
     BookingResponseDTO approveBooking(Long bookingId, String adminEmail);

@@ -10,6 +10,8 @@ const STATUS_COLORS = {
     CANCELLED: { bg: '#f8fafc', color: '#64748b', label: 'Cancelled' },
 };
 
+const BOOKING_STATUS_OPTIONS = ['', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'];
+
 const UserBookingsPage = () => {
     const [activeTab, setActiveTab]         = useState('browse');
     const [resources, setResources]         = useState([]);
@@ -17,9 +19,13 @@ const UserBookingsPage = () => {
     const [loading, setLoading]             = useState(true);
     const [showModal, setShowModal]         = useState(false);
     const [selectedResource, setSelected]   = useState(null);
+    const [selectedResourceId, setSelectedResourceId] = useState('');
     const [form, setForm]                   = useState({ startTime: '', endTime: '', purpose: '', attendees: '' });
     const [submitting, setSubmitting]       = useState(false);
     const [typeFilter, setTypeFilter]       = useState('');
+    const [locationFilter, setLocationFilter] = useState('');
+    const [minCapacity, setMinCapacity]     = useState('');
+    const [myStatusFilter, setMyStatusFilter] = useState('');
     const [error, setError]                 = useState('');
     const [success, setSuccess]             = useState('');
 
@@ -43,6 +49,7 @@ const UserBookingsPage = () => {
 
     const openModal = (resource) => {
         setSelected(resource);
+        setSelectedResourceId(resource.id?.toString() || '');
         setForm({ startTime: '', endTime: '', purpose: '', attendees: '' });
         setError('');
         setShowModal(true);
@@ -51,6 +58,14 @@ const UserBookingsPage = () => {
     const closeModal = () => {
         setShowModal(false);
         setSelected(null);
+        setSelectedResourceId('');
+        setError('');
+    };
+
+    const handleResourceSelect = (resourceId) => {
+        const resource = resources.find(r => String(r.id) === resourceId);
+        setSelected(resource || null);
+        setSelectedResourceId(resourceId);
         setError('');
     };
 
@@ -58,6 +73,12 @@ const UserBookingsPage = () => {
         e.preventDefault();
         setError('');
         setSubmitting(true);
+        if (!selectedResource) {
+            setError('Please select a resource before submitting your booking.');
+            setSubmitting(false);
+            return;
+        }
+
         try {
             await api.post('/v1/bookings', {
                 resourceId: selectedResource.id,
@@ -67,10 +88,13 @@ const UserBookingsPage = () => {
                 attendees:  form.attendees ? parseInt(form.attendees, 10) : null,
             });
             closeModal();
-            setSuccess('Booking request submitted! Waiting for admin approval.');
+            setSuccess('Resource is available. Your booking has been created successfully.');
             loadAll();
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to submit booking request.');
+            const message = err.response?.status === 409
+                ? 'Resource is not available in the selected time slot. Please choose another time or resource.'
+                : err.response?.data?.message || 'Failed to book the resource.';
+            setError(message);
         } finally {
             setSubmitting(false);
         }
@@ -88,7 +112,18 @@ const UserBookingsPage = () => {
     };
 
     const types = [...new Set(resources.map(r => r.type))];
-    const filteredResources = typeFilter ? resources.filter(r => r.type === typeFilter) : resources;
+    const minCapacityValue = parseInt(minCapacity, 10);
+    const filteredResources = resources.filter(resource => {
+        const matchesType = !typeFilter || resource.type === typeFilter;
+        const matchesLocation = !locationFilter ||
+            resource.location?.toLowerCase().includes(locationFilter.toLowerCase()) ||
+            resource.building?.toLowerCase().includes(locationFilter.toLowerCase());
+        const matchesCapacity = !minCapacity || (
+            !Number.isNaN(minCapacityValue) && resource.capacity != null && resource.capacity >= minCapacityValue
+        );
+        return matchesType && matchesLocation && matchesCapacity;
+    });
+    const filteredMyBookings = myBookings.filter(b => !myStatusFilter || b.status === myStatusFilter);
     const nowLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
     if (loading) return <div className="loader"></div>;
@@ -97,7 +132,7 @@ const UserBookingsPage = () => {
         <div className="bookings-page">
             <div className="bookings-header">
                 <h1 className="bookings-title">Resource Bookings</h1>
-                <p className="bookings-subtitle">Browse available university facilities and request a booking</p>
+                <p className="bookings-subtitle">Browse available university facilities and add a booking for your chosen slot.</p>
             </div>
 
             {success && (
@@ -118,7 +153,7 @@ const UserBookingsPage = () => {
                     className={`booking-tab ${activeTab === 'browse' ? 'active' : ''}`}
                     onClick={() => setActiveTab('browse')}
                 >
-                    <Plus size={16} /> Browse &amp; Book
+                    <Plus size={16} /> Add Booking
                 </button>
                 <button
                     className={`booking-tab ${activeTab === 'my' ? 'active' : ''}`}
@@ -132,6 +167,99 @@ const UserBookingsPage = () => {
             {/* ── Browse Resources tab ── */}
             {activeTab === 'browse' && (
                 <div>
+                    <div className="booking-panel">
+                        <div className="booking-panel-heading">
+                            <div>
+                                <h2>Add Booking</h2>
+                                <p>Select a resource and submit a booking request directly from this page.</p>
+                            </div>
+                        </div>
+
+                        <form className="booking-panel-form" onSubmit={handleSubmit}>
+                            <label>
+                                Resource *
+                                <select
+                                    value={selectedResourceId}
+                                    onChange={e => handleResourceSelect(e.target.value)}
+                                    required
+                                >
+                                    <option value="">Select a resource</option>
+                                    {resources.map(resource => (
+                                        <option key={resource.id} value={resource.id}>
+                                            {resource.name} ({resource.type.replace(/_/g, ' ')})
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+
+                            {selectedResource && (
+                                <div className="selected-resource-summary">
+                                    <strong>{selectedResource.name}</strong>
+                                    <div>{selectedResource.location}</div>
+                                    {selectedResource.capacity != null && (
+                                        <div>Capacity: {selectedResource.capacity}</div>
+                                    )}
+                                </div>
+                            )}
+
+                            <label>
+                                Start Date &amp; Time *
+                                <input
+                                    type="datetime-local"
+                                    value={form.startTime}
+                                    min={nowLocal}
+                                    onChange={e => setForm({ ...form, startTime: e.target.value })}
+                                    required
+                                />
+                            </label>
+
+                            <label>
+                                End Date &amp; Time *
+                                <input
+                                    type="datetime-local"
+                                    value={form.endTime}
+                                    min={form.startTime || nowLocal}
+                                    onChange={e => setForm({ ...form, endTime: e.target.value })}
+                                    required
+                                />
+                            </label>
+
+                            <label>
+                                Purpose *
+                                <textarea
+                                    value={form.purpose}
+                                    onChange={e => setForm({ ...form, purpose: e.target.value })}
+                                    placeholder="Describe the purpose of your booking..."
+                                    required
+                                    maxLength={500}
+                                    rows={3}
+                                />
+                            </label>
+
+                            <label>
+                                Number of Attendees
+                                <input
+                                    type="number"
+                                    value={form.attendees}
+                                    onChange={e => setForm({ ...form, attendees: e.target.value })}
+                                    min={1}
+                                    max={selectedResource?.capacity || undefined}
+                                    placeholder={selectedResource?.capacity ? `Max ${selectedResource.capacity}` : 'Optional'}
+                                />
+                            </label>
+
+                            {error && (
+                                <div className="modal-error"><AlertCircle size={14} /> {error}</div>
+                            )}
+
+                            <div className="modal-actions">
+                                <button type="submit" className="btn-primary-action" disabled={submitting}>
+                                    {submitting ? 'Booking…' : 'Book Resource'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
                     <div className="booking-filters">
                         <button
                             className={`filter-chip ${typeFilter === '' ? 'active' : ''}`}
@@ -146,6 +274,22 @@ const UserBookingsPage = () => {
                                 {t.replace(/_/g, ' ')}
                             </button>
                         ))}
+                    </div>
+
+                    <div className="booking-search-row">
+                        <input
+                            type="search"
+                            value={locationFilter}
+                            onChange={e => setLocationFilter(e.target.value)}
+                            placeholder="Filter by location or building"
+                        />
+                        <input
+                            type="number"
+                            min="1"
+                            value={minCapacity}
+                            onChange={e => setMinCapacity(e.target.value)}
+                            placeholder="Min capacity"
+                        />
                     </div>
 
                     {filteredResources.length === 0 ? (
@@ -193,10 +337,22 @@ const UserBookingsPage = () => {
             {/* ── My Bookings tab ── */}
             {activeTab === 'my' && (
                 <div className="my-bookings">
-                    {myBookings.length === 0 ? (
+                    <div className="booking-filters" style={{ marginBottom: '1rem' }}>
+                        {BOOKING_STATUS_OPTIONS.map(status => (
+                            <button
+                                key={status}
+                                className={`filter-chip ${myStatusFilter === status ? 'active' : ''}`}
+                                onClick={() => setMyStatusFilter(status)}
+                            >
+                                {status || 'All'}
+                            </button>
+                        ))}
+                    </div>
+
+                    {filteredMyBookings.length === 0 ? (
                         <div className="no-data-card">
                             <Calendar size={40} />
-                            <p>No bookings yet. Go to "Browse &amp; Book" to request your first booking.</p>
+                            <p>No bookings yet. Go to "Add Booking" to request your first booking.</p>
                         </div>
                     ) : (
                         <div className="bookings-table-wrap">
