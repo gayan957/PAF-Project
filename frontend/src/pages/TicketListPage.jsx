@@ -3,6 +3,7 @@ import api from '../api/axios';
 import TicketTable from '../components/tickets/TicketTable';
 import { Plus, Trash2, AlertTriangle, Zap, Activity, Info } from 'lucide-react';
 import TicketForm from '../components/tickets/TicketForm';
+import { useAuth } from '../context/AuthContext';
 
 const priorityConfig = {
     URGENT: { label: 'Urgent', color: '#ef4444', bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.3)', icon: AlertTriangle },
@@ -12,9 +13,13 @@ const priorityConfig = {
 };
 
 const TicketListPage = () => {
+    const { user } = useAuth();
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+
+    const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
+    const isTechnician = user?.role === 'ROLE_TECHNICIAN' || user?.role === 'TECHNICIAN';
 
     const fetchTickets = async () => {
         try {
@@ -79,10 +84,12 @@ const TicketListPage = () => {
                     </p>
                 </div>
 
-                <button onClick={() => setShowForm(true)} style={primaryButton}>
-                    <Plus size={18} />
-                    New Ticket
-                </button>
+                {!isAdmin && !isTechnician && (
+                    <button onClick={() => setShowForm(true)} style={primaryButton}>
+                        <Plus size={18} />
+                        New Ticket
+                    </button>
+                )}
             </div>
 
             {/* Priority Stats Row */}
