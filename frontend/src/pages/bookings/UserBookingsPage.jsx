@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import api from '../../api/axios';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Users, Clock, Plus, X, CheckCircle, AlertCircle } from 'lucide-react';
+import api from '../../api/axios';
+import { getMyBookings, cancelBooking } from '../../api/bookingApi';
+import BookingFormModal from '../../components/bookings/BookingFormModal';
 import './Bookings.css';
 
 const STATUS_COLORS = {
@@ -12,31 +15,40 @@ const STATUS_COLORS = {
 
 const BOOKING_STATUS_OPTIONS = ['', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'];
 
+const fmt = (dt) =>
+    dt
+        ? new Date(dt).toLocaleString('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+          })
+        : '—';
+
 const UserBookingsPage = () => {
-    const [activeTab, setActiveTab]         = useState('browse');
-    const [resources, setResources]         = useState([]);
-    const [myBookings, setMyBookings]       = useState([]);
-    const [loading, setLoading]             = useState(true);
-    const [showModal, setShowModal]         = useState(false);
-    const [selectedResource, setSelected]   = useState(null);
-    const [selectedResourceId, setSelectedResourceId] = useState('');
-    const [form, setForm]                   = useState({ startTime: '', endTime: '', purpose: '', attendees: '' });
-    const [submitting, setSubmitting]       = useState(false);
-    const [typeFilter, setTypeFilter]       = useState('');
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    const [activeTab, setActiveTab]           = useState('browse');
+    const [resources, setResources]           = useState([]);
+    const [myBookings, setMyBookings]         = useState([]);
+    const [loading, setLoading]               = useState(true);
+    const [showModal, setShowModal]           = useState(false);
+    const [selectedResource, setSelectedResource] = useState(null);
+    const [typeFilter, setTypeFilter]         = useState('');
     const [locationFilter, setLocationFilter] = useState('');
-    const [minCapacity, setMinCapacity]     = useState('');
+    const [minCapacity, setMinCapacity]       = useState('');
     const [myStatusFilter, setMyStatusFilter] = useState('');
-    const [error, setError]                 = useState('');
-    const [success, setSuccess]             = useState('');
+    const [error, setError]                   = useState('');
+    const [success, setSuccess]               = useState('');
 
-    useEffect(() => { loadAll(); }, []);
-
-    const loadAll = async () => {
+    const loadAll = useCallback(async () => {
         setLoading(true);
         try {
             const [resRes, bookRes] = await Promise.all([
                 api.get('/v1/resources', { params: { status: 'ACTIVE', size: 100 } }),
-                api.get('/v1/bookings/my', { params: { size: 100 } }),
+                getMyBookings({ size: 100 }),
             ]);
             setResources(resRes.data?.data?.content || []);
             setMyBookings(bookRes.data?.data?.content || []);
@@ -45,65 +57,38 @@ const UserBookingsPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => { loadAll(); }, [loadAll]);
+
+    // Handle ?resourceId=X deep-link from ResourceDetailPage
+    useEffect(() => {
+        if (!resources.length) return;
+        const params = new URLSearchParams(location.search);
+        const resourceId = params.get('resourceId');
+        if (!resourceId) return;
+        const resource = resources.find(r => r.id === parseInt(resourceId, 10));
+        if (resource) {
+            setSelectedResource(resource);
+            setShowModal(true);
+            navigate('/bookings', { replace: true });
+        }
+    }, [resources, location.search]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const openModal = (resource) => {
-        setSelected(resource);
-        setSelectedResourceId(resource.id?.toString() || '');
-        setForm({ startTime: '', endTime: '', purpose: '', attendees: '' });
-        setError('');
+        setSelectedResource(resource);
         setShowModal(true);
     };
 
     const closeModal = () => {
         setShowModal(false);
-        setSelected(null);
-        setSelectedResourceId('');
-        setError('');
-    };
-
-    const handleResourceSelect = (resourceId) => {
-        const resource = resources.find(r => String(r.id) === resourceId);
-        setSelected(resource || null);
-        setSelectedResourceId(resourceId);
-        setError('');
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        setSubmitting(true);
-        if (!selectedResource) {
-            setError('Please select a resource before submitting your booking.');
-            setSubmitting(false);
-            return;
-        }
-
-        try {
-            await api.post('/v1/bookings', {
-                resourceId: selectedResource.id,
-                startTime:  form.startTime + ':00',
-                endTime:    form.endTime   + ':00',
-                purpose:    form.purpose,
-                attendees:  form.attendees ? parseInt(form.attendees, 10) : null,
-            });
-            closeModal();
-            setSuccess('Resource is available. Your booking has been created successfully.');
-            loadAll();
-        } catch (err) {
-            const message = err.response?.status === 409
-                ? 'Resource is not available in the selected time slot. Please choose another time or resource.'
-                : err.response?.data?.message || 'Failed to book the resource.';
-            setError(message);
-        } finally {
-            setSubmitting(false);
-        }
+        setSelectedResource(null);
     };
 
     const handleCancel = async (id) => {
-        if (!window.confirm('Are you sure you want to cancel this booking?')) return;
+        if (!window.confirm('Cancel this booking?')) return;
         try {
-            await api.patch(`/v1/bookings/${id}/cancel`);
+            await cancelBooking(id);
             setSuccess('Booking cancelled successfully.');
             loadAll();
         } catch (err) {
@@ -114,7 +99,7 @@ const UserBookingsPage = () => {
     const types = [...new Set(resources.map(r => r.type))];
     const minCapacityValue = parseInt(minCapacity, 10);
     const filteredResources = resources.filter(resource => {
-        const matchesType = !typeFilter || resource.type === typeFilter;
+        const matchesType     = !typeFilter || resource.type === typeFilter;
         const matchesLocation = !locationFilter ||
             resource.location?.toLowerCase().includes(locationFilter.toLowerCase()) ||
             resource.building?.toLowerCase().includes(locationFilter.toLowerCase());
@@ -124,7 +109,6 @@ const UserBookingsPage = () => {
         return matchesType && matchesLocation && matchesCapacity;
     });
     const filteredMyBookings = myBookings.filter(b => !myStatusFilter || b.status === myStatusFilter);
-    const nowLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
     if (loading) return <div className="loader"></div>;
 
@@ -132,7 +116,9 @@ const UserBookingsPage = () => {
         <div className="bookings-page">
             <div className="bookings-header">
                 <h1 className="bookings-title">Resource Bookings</h1>
-                <p className="bookings-subtitle">Browse available university facilities and add a booking for your chosen slot.</p>
+                <p className="bookings-subtitle">
+                    Browse available university facilities and request a booking for your chosen time slot.
+                </p>
             </div>
 
             {success && (
@@ -160,106 +146,15 @@ const UserBookingsPage = () => {
                     onClick={() => setActiveTab('my')}
                 >
                     <Calendar size={16} /> My Bookings
-                    <span className="tab-badge">{myBookings.length}</span>
+                    {myBookings.length > 0 && (
+                        <span className="tab-badge">{myBookings.length}</span>
+                    )}
                 </button>
             </div>
 
             {/* ── Browse Resources tab ── */}
             {activeTab === 'browse' && (
                 <div>
-                    <div className="booking-panel">
-                        <div className="booking-panel-heading">
-                            <div>
-                                <h2>Add Booking</h2>
-                                <p>Select a resource and submit a booking request directly from this page.</p>
-                            </div>
-                        </div>
-
-                        <form className="booking-panel-form" onSubmit={handleSubmit}>
-                            <label>
-                                Resource *
-                                <select
-                                    value={selectedResourceId}
-                                    onChange={e => handleResourceSelect(e.target.value)}
-                                    required
-                                >
-                                    <option value="">Select a resource</option>
-                                    {resources.map(resource => (
-                                        <option key={resource.id} value={resource.id}>
-                                            {resource.name} ({resource.type.replace(/_/g, ' ')})
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-
-                            {selectedResource && (
-                                <div className="selected-resource-summary">
-                                    <strong>{selectedResource.name}</strong>
-                                    <div>{selectedResource.location}</div>
-                                    {selectedResource.capacity != null && (
-                                        <div>Capacity: {selectedResource.capacity}</div>
-                                    )}
-                                </div>
-                            )}
-
-                            <label>
-                                Start Date &amp; Time *
-                                <input
-                                    type="datetime-local"
-                                    value={form.startTime}
-                                    min={nowLocal}
-                                    onChange={e => setForm({ ...form, startTime: e.target.value })}
-                                    required
-                                />
-                            </label>
-
-                            <label>
-                                End Date &amp; Time *
-                                <input
-                                    type="datetime-local"
-                                    value={form.endTime}
-                                    min={form.startTime || nowLocal}
-                                    onChange={e => setForm({ ...form, endTime: e.target.value })}
-                                    required
-                                />
-                            </label>
-
-                            <label>
-                                Purpose *
-                                <textarea
-                                    value={form.purpose}
-                                    onChange={e => setForm({ ...form, purpose: e.target.value })}
-                                    placeholder="Describe the purpose of your booking..."
-                                    required
-                                    maxLength={500}
-                                    rows={3}
-                                />
-                            </label>
-
-                            <label>
-                                Number of Attendees
-                                <input
-                                    type="number"
-                                    value={form.attendees}
-                                    onChange={e => setForm({ ...form, attendees: e.target.value })}
-                                    min={1}
-                                    max={selectedResource?.capacity || undefined}
-                                    placeholder={selectedResource?.capacity ? `Max ${selectedResource.capacity}` : 'Optional'}
-                                />
-                            </label>
-
-                            {error && (
-                                <div className="modal-error"><AlertCircle size={14} /> {error}</div>
-                            )}
-
-                            <div className="modal-actions">
-                                <button type="submit" className="btn-primary-action" disabled={submitting}>
-                                    {submitting ? 'Booking…' : 'Book Resource'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
                     <div className="booking-filters">
                         <button
                             className={`filter-chip ${typeFilter === '' ? 'active' : ''}`}
@@ -293,7 +188,7 @@ const UserBookingsPage = () => {
                     </div>
 
                     {filteredResources.length === 0 ? (
-                        <p className="no-data">No active resources found.</p>
+                        <p className="no-data">No active resources match your filters.</p>
                     ) : (
                         <div className="resources-grid">
                             {filteredResources.map(resource => (
@@ -352,7 +247,11 @@ const UserBookingsPage = () => {
                     {filteredMyBookings.length === 0 ? (
                         <div className="no-data-card">
                             <Calendar size={40} />
-                            <p>No bookings yet. Go to "Add Booking" to request your first booking.</p>
+                            <p>
+                                {myStatusFilter
+                                    ? `No ${myStatusFilter.toLowerCase()} bookings found.`
+                                    : 'No bookings yet. Go to "Add Booking" to request your first booking.'}
+                            </p>
                         </div>
                     ) : (
                         <div className="bookings-table-wrap">
@@ -370,18 +269,21 @@ const UserBookingsPage = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {myBookings.map(b => {
+                                    {filteredMyBookings.map(b => {
                                         const s = STATUS_COLORS[b.status] || {};
                                         return (
                                             <tr key={b.id}>
                                                 <td><strong>{b.resourceName}</strong></td>
                                                 <td>{b.resourceLocation}</td>
-                                                <td>{new Date(b.startTime).toLocaleString()}</td>
-                                                <td>{new Date(b.endTime).toLocaleString()}</td>
+                                                <td style={{ whiteSpace: 'nowrap' }}>{fmt(b.startTime)}</td>
+                                                <td style={{ whiteSpace: 'nowrap' }}>{fmt(b.endTime)}</td>
                                                 <td style={{ maxWidth: '180px' }}>{b.purpose}</td>
                                                 <td>{b.attendees ?? '—'}</td>
                                                 <td>
-                                                    <span className="status-badge" style={{ background: s.bg, color: s.color }}>
+                                                    <span
+                                                        className="status-badge"
+                                                        style={{ background: s.bg, color: s.color }}
+                                                    >
                                                         {s.label || b.status}
                                                     </span>
                                                     {b.status === 'REJECTED' && b.rejectionReason && (
@@ -392,7 +294,10 @@ const UserBookingsPage = () => {
                                                 </td>
                                                 <td>
                                                     {(b.status === 'PENDING' || b.status === 'APPROVED') && (
-                                                        <button className="btn-cancel" onClick={() => handleCancel(b.id)}>
+                                                        <button
+                                                            className="btn-cancel"
+                                                            onClick={() => handleCancel(b.id)}
+                                                        >
                                                             Cancel
                                                         </button>
                                                     )}
@@ -409,85 +314,15 @@ const UserBookingsPage = () => {
 
             {/* ── Booking Modal ── */}
             {showModal && selectedResource && (
-                <div className="modal-overlay" onClick={closeModal}>
-                    <div className="booking-modal" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h2>Book: {selectedResource.name}</h2>
-                            <button onClick={closeModal}><X size={20} /></button>
-                        </div>
-
-                        <div className="modal-resource-info">
-                            <span><MapPin size={14} /> {selectedResource.location}</span>
-                            {selectedResource.capacity != null && (
-                                <span><Users size={14} /> Max capacity: {selectedResource.capacity}</span>
-                            )}
-                            {selectedResource.availabilityStart && (
-                                <span><Clock size={14} /> Available: {selectedResource.availabilityStart} – {selectedResource.availabilityEnd}</span>
-                            )}
-                        </div>
-
-                        {error && (
-                            <div className="modal-error"><AlertCircle size={14} /> {error}</div>
-                        )}
-
-                        <form onSubmit={handleSubmit} className="modal-form">
-                            <label>
-                                Start Date &amp; Time *
-                                <input
-                                    type="datetime-local"
-                                    value={form.startTime}
-                                    min={nowLocal}
-                                    onChange={e => setForm({ ...form, startTime: e.target.value })}
-                                    required
-                                />
-                            </label>
-
-                            <label>
-                                End Date &amp; Time *
-                                <input
-                                    type="datetime-local"
-                                    value={form.endTime}
-                                    min={form.startTime || nowLocal}
-                                    onChange={e => setForm({ ...form, endTime: e.target.value })}
-                                    required
-                                />
-                            </label>
-
-                            <label>
-                                Purpose *
-                                <textarea
-                                    value={form.purpose}
-                                    onChange={e => setForm({ ...form, purpose: e.target.value })}
-                                    placeholder="Describe the purpose of your booking..."
-                                    required
-                                    maxLength={500}
-                                    rows={3}
-                                />
-                            </label>
-
-                            <label>
-                                Number of Attendees
-                                <input
-                                    type="number"
-                                    value={form.attendees}
-                                    onChange={e => setForm({ ...form, attendees: e.target.value })}
-                                    min={1}
-                                    max={selectedResource.capacity || undefined}
-                                    placeholder={selectedResource.capacity ? `Max ${selectedResource.capacity}` : 'Optional'}
-                                />
-                            </label>
-
-                            <div className="modal-actions">
-                                <button type="button" className="btn-secondary" onClick={closeModal}>
-                                    Cancel
-                                </button>
-                                <button type="submit" className="btn-primary-action" disabled={submitting}>
-                                    {submitting ? 'Submitting…' : 'Submit Booking Request'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <BookingFormModal
+                    resource={selectedResource}
+                    onClose={closeModal}
+                    onSuccess={() => {
+                        closeModal();
+                        setSuccess('Booking request submitted! Pending admin approval.');
+                        loadAll();
+                    }}
+                />
             )}
         </div>
     );

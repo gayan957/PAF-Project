@@ -2,6 +2,7 @@ package com.university.backend.service.impl;
 
 import com.university.backend.dto.BookingRequestDTO;
 import com.university.backend.dto.BookingResponseDTO;
+import com.university.backend.dto.BookingStatsDTO;
 import com.university.backend.dto.BookingStatusUpdateDTO;
 import com.university.backend.model.*;
 import com.university.backend.repository.BookingRepository;
@@ -9,6 +10,7 @@ import com.university.backend.repository.ResourceRepository;
 import com.university.backend.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -83,7 +85,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public Page<BookingResponseDTO> getMyBookings(String userEmail, Pageable pageable) {
-        return bookingRepository.findByUserEmail(userEmail, pageable)
+        return bookingRepository.findByUserEmailOrderByCreatedAtDesc(userEmail, pageable)
             .map(this::toDTO);
     }
 
@@ -91,13 +93,11 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponseDTO cancelBooking(Long bookingId, String userEmail) {
         Booking booking = findBookingById(bookingId);
 
-        // Only the owner can cancel their booking
         if (!booking.getUserEmail().equals(userEmail)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "You can only cancel your own bookings");
         }
 
-        // Can only cancel PENDING or APPROVED bookings
         if (booking.getStatus() != BookingStatus.PENDING
                 && booking.getStatus() != BookingStatus.APPROVED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -110,7 +110,8 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<BookingResponseDTO> getAllBookings(BookingStatus status, String resourceName, String userEmail, LocalDateTime from, LocalDateTime to, Pageable pageable) {
+    public Page<BookingResponseDTO> getAllBookings(BookingStatus status, String resourceName,
+            String userEmail, LocalDateTime from, LocalDateTime to, Pageable pageable) {
         return bookingRepository.findByFilters(status, resourceName, userEmail, from, to, pageable)
             .map(this::toDTO);
     }
@@ -124,7 +125,7 @@ public class BookingServiceImpl implements BookingService {
                 "Only PENDING bookings can be approved. Current status: " + booking.getStatus());
         }
 
-        // Re-check conflicts before approving (another booking might have been approved since)
+        // Re-check conflicts before approving (race condition guard)
         List<Booking> conflicts = bookingRepository.findConflictingBookingsExcluding(
             booking.getResource().getId(),
             booking.getStartTime(),
@@ -169,6 +170,39 @@ public class BookingServiceImpl implements BookingService {
     @Transactional(readOnly = true)
     public BookingResponseDTO getBookingById(Long bookingId) {
         return toDTO(findBookingById(bookingId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BookingResponseDTO> getResourceAvailability(Long resourceId, LocalDateTime from, LocalDateTime to) {
+        return bookingRepository.findApprovedBookingsForResource(resourceId, from, to)
+            .stream().map(this::toDTO).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BookingStatsDTO getBookingStats() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+
+        return BookingStatsDTO.builder()
+            .total(bookingRepository.count())
+            .pending(bookingRepository.countByStatus(BookingStatus.PENDING))
+            .approved(bookingRepository.countByStatus(BookingStatus.APPROVED))
+            .rejected(bookingRepository.countByStatus(BookingStatus.REJECTED))
+            .cancelled(bookingRepository.countByStatus(BookingStatus.CANCELLED))
+            .todayApproved(bookingRepository.countTodayApprovedBookings(startOfDay, endOfDay))
+            .upcomingApproved(bookingRepository.countUpcomingApproved(now))
+            .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BookingResponseDTO> getUpcomingBookingsForResource(Long resourceId, int limit) {
+        return bookingRepository
+            .findUpcomingApprovedForResource(resourceId, LocalDateTime.now(), PageRequest.of(0, limit))
+            .stream().map(this::toDTO).toList();
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────────

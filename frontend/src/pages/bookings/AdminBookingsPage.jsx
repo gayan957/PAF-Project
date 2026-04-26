@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../api/axios';
-import { Check, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Check, X, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
+import {
+    getAllBookings,
+    approveBooking,
+    rejectBooking,
+    getBookingStats,
+} from '../../api/bookingApi';
 import './Bookings.css';
 
 const STATUS_COLORS = {
@@ -12,31 +17,56 @@ const STATUS_COLORS = {
 
 const STATUSES = ['', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'];
 
-const AdminBookingsPage = () => {
-    const [bookings, setBookings]         = useState([]);
-    const [loading, setLoading]           = useState(true);
-    const [statusFilter, setStatusFilter] = useState('');
-    const [resourceQuery, setResourceQuery] = useState('');
-    const [userQuery, setUserQuery] = useState('');
-    const [fromDate, setFromDate] = useState('');
-    const [toDate, setToDate] = useState('');
-    const [rejectId, setRejectId]         = useState(null);
-    const [rejectReason, setRejectReason] = useState('');
-    const [actionLoading, setActionLoading] = useState(false);
-    const [message, setMessage]           = useState({ text: '', type: '' });
+const fmt = (dt) =>
+    dt
+        ? new Date(dt).toLocaleString('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+          })
+        : '—';
 
-    useEffect(() => { loadBookings(); }, [statusFilter, resourceQuery, userQuery, fromDate, toDate]); // eslint-disable-line react-hooks/exhaustive-deps
+const AdminBookingsPage = () => {
+    const [bookings, setBookings]             = useState([]);
+    const [stats, setStats]                   = useState(null);
+    const [loading, setLoading]               = useState(true);
+    const [statusFilter, setStatusFilter]     = useState('');
+    const [resourceQuery, setResourceQuery]   = useState('');
+    const [userQuery, setUserQuery]           = useState('');
+    const [fromDate, setFromDate]             = useState('');
+    const [toDate, setToDate]                 = useState('');
+    const [rejectId, setRejectId]             = useState(null);
+    const [rejectReason, setRejectReason]     = useState('');
+    const [actionLoading, setActionLoading]   = useState(false);
+    const [message, setMessage]               = useState({ text: '', type: '' });
+
+    useEffect(() => { loadStats(); }, []);
+
+    useEffect(() => {
+        loadBookings();
+    }, [statusFilter, resourceQuery, userQuery, fromDate, toDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const loadStats = async () => {
+        try {
+            const res = await getBookingStats();
+            setStats(res.data?.data);
+        } catch (e) {
+            console.error('Failed to load booking stats', e);
+        }
+    };
 
     const loadBookings = async () => {
         setLoading(true);
         try {
             const params = { size: 200 };
-            if (statusFilter) params.status = statusFilter;
+            if (statusFilter)  params.status       = statusFilter;
             if (resourceQuery) params.resourceName = resourceQuery;
-            if (userQuery) params.userEmail = userQuery;
-            if (fromDate) params.from = `${fromDate}:00`;
-            if (toDate) params.to = `${toDate}:00`;
-            const res = await api.get('/v1/bookings', { params });
+            if (userQuery)     params.userEmail     = userQuery;
+            if (fromDate)      params.from          = `${fromDate}:00`;
+            if (toDate)        params.to            = `${toDate}:00`;
+            const res = await getAllBookings(params);
             setBookings(res.data?.data?.content || []);
         } catch (e) {
             console.error(e);
@@ -54,9 +84,10 @@ const AdminBookingsPage = () => {
         if (!window.confirm('Approve this booking?')) return;
         setActionLoading(true);
         try {
-            await api.patch(`/v1/bookings/${id}/approve`);
+            await approveBooking(id);
             notify('Booking approved successfully.');
             loadBookings();
+            loadStats();
         } catch (err) {
             notify(err.response?.data?.message || 'Failed to approve booking.', 'error');
         } finally {
@@ -69,13 +100,12 @@ const AdminBookingsPage = () => {
         if (!rejectReason.trim()) return;
         setActionLoading(true);
         try {
-            await api.patch(`/v1/bookings/${rejectId}/reject`, null, {
-                params: { reason: rejectReason.trim() },
-            });
+            await rejectBooking(rejectId, rejectReason.trim());
             setRejectId(null);
             setRejectReason('');
             notify('Booking rejected.');
             loadBookings();
+            loadStats();
         } catch (err) {
             notify(err.response?.data?.message || 'Failed to reject booking.', 'error');
         } finally {
@@ -92,12 +122,54 @@ const AdminBookingsPage = () => {
                 <p className="bookings-subtitle">
                     Review and manage all facility booking requests
                     {pendingCount > 0 && !statusFilter && (
-                        <span style={{ marginLeft: '0.75rem', background: '#fff7ed', color: '#c2410c', borderRadius: '999px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}>
+                        <span style={{
+                            marginLeft: '0.75rem',
+                            background: '#fff7ed',
+                            color: '#c2410c',
+                            borderRadius: '999px',
+                            padding: '2px 10px',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                        }}>
                             {pendingCount} pending
                         </span>
                     )}
                 </p>
             </div>
+
+            {/* Stats row */}
+            {stats && (
+                <div className="booking-stats-row">
+                    <div className="booking-stat-card">
+                        <div className="stat-value">{stats.total}</div>
+                        <div className="stat-label">Total</div>
+                    </div>
+                    <div className="booking-stat-card pending">
+                        <div className="stat-value">{stats.pending}</div>
+                        <div className="stat-label">Pending</div>
+                    </div>
+                    <div className="booking-stat-card approved">
+                        <div className="stat-value">{stats.approved}</div>
+                        <div className="stat-label">Approved</div>
+                    </div>
+                    <div className="booking-stat-card rejected">
+                        <div className="stat-value">{stats.rejected}</div>
+                        <div className="stat-label">Rejected</div>
+                    </div>
+                    <div className="booking-stat-card cancelled">
+                        <div className="stat-value">{stats.cancelled}</div>
+                        <div className="stat-label">Cancelled</div>
+                    </div>
+                    <div className="booking-stat-card upcoming">
+                        <div className="stat-value">{stats.upcomingApproved}</div>
+                        <div className="stat-label">Upcoming</div>
+                    </div>
+                    <div className="booking-stat-card today">
+                        <div className="stat-value">{stats.todayApproved}</div>
+                        <div className="stat-label">Today</div>
+                    </div>
+                </div>
+            )}
 
             {message.text && (
                 <div className={`booking-alert booking-alert-${message.type}`}>
@@ -136,20 +208,23 @@ const AdminBookingsPage = () => {
                     type="datetime-local"
                     value={fromDate}
                     onChange={e => setFromDate(e.target.value)}
-                    placeholder="From"
+                    title="From date"
                 />
                 <input
                     type="datetime-local"
                     value={toDate}
                     onChange={e => setToDate(e.target.value)}
-                    placeholder="To"
+                    title="To date"
                 />
             </div>
 
             {loading ? (
                 <div className="loader"></div>
             ) : bookings.length === 0 ? (
-                <p className="no-data">No bookings found{statusFilter ? ` with status "${statusFilter}"` : ''}.</p>
+                <div className="no-data-card">
+                    <Calendar size={40} />
+                    <p>No bookings found{statusFilter ? ` with status "${statusFilter}"` : ''}.</p>
+                </div>
             ) : (
                 <div className="bookings-table-wrap" style={{ marginTop: '0.5rem' }}>
                     <table className="bookings-table">
@@ -182,12 +257,15 @@ const AdminBookingsPage = () => {
                                             <br />
                                             <small style={{ color: '#64748b' }}>{b.userEmail}</small>
                                         </td>
-                                        <td style={{ whiteSpace: 'nowrap' }}>{new Date(b.startTime).toLocaleString()}</td>
-                                        <td style={{ whiteSpace: 'nowrap' }}>{new Date(b.endTime).toLocaleString()}</td>
+                                        <td style={{ whiteSpace: 'nowrap' }}>{fmt(b.startTime)}</td>
+                                        <td style={{ whiteSpace: 'nowrap' }}>{fmt(b.endTime)}</td>
                                         <td style={{ maxWidth: '160px' }}>{b.purpose}</td>
                                         <td>{b.attendees ?? '—'}</td>
                                         <td>
-                                            <span className="status-badge" style={{ background: s.bg, color: s.color }}>
+                                            <span
+                                                className="status-badge"
+                                                style={{ background: s.bg, color: s.color }}
+                                            >
                                                 {b.status}
                                             </span>
                                             {b.status === 'REJECTED' && b.rejectionReason && (
@@ -232,7 +310,11 @@ const AdminBookingsPage = () => {
             {/* ── Reject Reason Modal ── */}
             {rejectId && (
                 <div className="modal-overlay" onClick={() => setRejectId(null)}>
-                    <div className="booking-modal" style={{ maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
+                    <div
+                        className="booking-modal"
+                        style={{ maxWidth: '480px' }}
+                        onClick={e => e.stopPropagation()}
+                    >
                         <div className="modal-header">
                             <h2>Reject Booking #{rejectId}</h2>
                             <button onClick={() => setRejectId(null)}><X size={20} /></button>
@@ -252,7 +334,11 @@ const AdminBookingsPage = () => {
                             </label>
 
                             <div className="modal-actions">
-                                <button type="button" className="btn-secondary" onClick={() => setRejectId(null)}>
+                                <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    onClick={() => setRejectId(null)}
+                                >
                                     Cancel
                                 </button>
                                 <button

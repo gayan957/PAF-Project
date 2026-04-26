@@ -2,15 +2,18 @@ package com.university.backend.service;
 
 import com.university.backend.dto.BookingRequestDTO;
 import com.university.backend.dto.BookingResponseDTO;
+import com.university.backend.dto.BookingStatsDTO;
 import com.university.backend.dto.BookingStatusUpdateDTO;
 import com.university.backend.model.BookingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface BookingService {
-        // USER: create a new booking request
+
+    // USER: create a new booking request
     BookingResponseDTO createBooking(BookingRequestDTO request, String userEmail, String userName);
 
     // USER: get my own bookings
@@ -37,4 +40,13 @@ public interface BookingService {
 
     // BOTH: get single booking by ID
     BookingResponseDTO getBookingById(Long bookingId);
+
+    // BOTH: get approved bookings for a resource in a date range (for availability display)
+    List<BookingResponseDTO> getResourceAvailability(Long resourceId, LocalDateTime from, LocalDateTime to);
+
+    // ADMIN: get booking statistics summary
+    BookingStatsDTO getBookingStats();
+
+    // BOTH: get next N upcoming approved bookings for a resource (for detail page schedule)
+    List<BookingResponseDTO> getUpcomingBookingsForResource(Long resourceId, int limit);
 }

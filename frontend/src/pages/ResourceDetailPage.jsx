@@ -3,12 +3,15 @@ import {
   AlertTriangle,
   ArrowLeft,
   Building2,
+  CalendarDays,
+  CheckCircle2,
   Clock,
   DoorOpen,
   Edit3,
   FlaskConical,
   MapPin,
   Package,
+  QrCode,
   ShieldCheck,
   Trash2,
   Users,
@@ -17,6 +20,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { deleteResource, getResourceById, updateResourceStatus } from '../api/resourceApi';
+import { getUpcomingBookingsForResource } from '../api/bookingApi';
 import ResourceAvailabilityCalendar from '../components/resources/ResourceAvailabilityCalendar';
 import StatusBadge from '../components/resources/StatusBadge';
 
@@ -33,13 +37,24 @@ const allowedTransitions = {
   OUT_OF_SERVICE: ['UNDER_MAINTENANCE'],
 };
 
+const fmtDate = (dt) =>
+  new Date(dt).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
+
+const fmtTime = (dt) =>
+  new Date(dt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
 export default function ResourceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+
   const [resource, setResource] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [upcomingBookings, setUpcomingBookings] = useState([]);
+  const [loadingUpcoming, setLoadingUpcoming] = useState(true);
+
   const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
 
   useEffect(() => {
@@ -49,12 +64,20 @@ export default function ResourceDetailPage() {
       .finally(() => setLoading(false));
   }, [id, navigate]);
 
+  // Fetch upcoming approved bookings for the schedule panel
+  useEffect(() => {
+    setLoadingUpcoming(true);
+    getUpcomingBookingsForResource(id, 8)
+      .then((res) => setUpcomingBookings(res.data?.data || []))
+      .catch(() => setUpcomingBookings([]))
+      .finally(() => setLoadingUpcoming(false));
+  }, [id]);
+
   const meta = useMemo(() => typeMeta[resource?.type] || typeMeta.EQUIPMENT, [resource]);
 
   const handleStatusChange = async (newStatus) => {
     const reason = window.prompt(`Reason for changing status to ${newStatus.replace(/_/g, ' ')}:`);
     if (reason === null) return;
-
     setStatusLoading(true);
     try {
       const response = await updateResourceStatus(id, newStatus, reason);
@@ -90,6 +113,7 @@ export default function ResourceDetailPage() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1140px', margin: '0 auto' }}>
+      {/* Back button */}
       <button
         type="button"
         onClick={() => navigate(isAdmin ? '/admin/resources' : '/resources')}
@@ -112,12 +136,20 @@ export default function ResourceDetailPage() {
       </button>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: '24px' }}>
+        {/* ── Left column: image + details + availability calendar ── */}
         <div>
           {resource.imageUrl ? (
             <img
               src={resource.imageUrl}
               alt={resource.name}
-              style={{ width: '100%', height: '286px', objectFit: 'cover', borderRadius: '8px', marginBottom: '20px', border: '1px solid #e2e8f0' }}
+              style={{
+                width: '100%',
+                height: '286px',
+                objectFit: 'cover',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                border: '1px solid #e2e8f0',
+              }}
             />
           ) : (
             <div style={{
@@ -149,6 +181,7 @@ export default function ResourceDetailPage() {
             </div>
           )}
 
+          {/* Resource info card */}
           <div style={{
             background: '#fff',
             border: '1px solid #e2e8f0',
@@ -157,10 +190,10 @@ export default function ResourceDetailPage() {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '18px', marginBottom: '18px' }}>
               <div>
-                <p style={{ margin: '0 0 6px', color: '#0f766e', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0' }}>
+                <p style={{ margin: '0 0 6px', color: '#0f766e', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase' }}>
                   Facility Record
                 </p>
-                <h1 style={{ margin: 0, fontSize: '26px', fontWeight: '850', color: '#0f172a', letterSpacing: '0' }}>
+                <h1 style={{ margin: 0, fontSize: '26px', fontWeight: '850', color: '#0f172a' }}>
                   {resource.name}
                 </h1>
               </div>
@@ -197,7 +230,7 @@ export default function ResourceDetailPage() {
             {resource.description && (
               <div style={{ borderTop: '1px solid #f1f5f9', marginTop: '20px', paddingTop: '18px' }}>
                 <h4 style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: '800', color: '#334155' }}>
-                  Facilities Notes
+                  Facility Notes
                 </h4>
                 <p style={{ margin: 0, fontSize: '14px', color: '#64748b', lineHeight: 1.7 }}>
                   {resource.description}
@@ -209,7 +242,158 @@ export default function ResourceDetailPage() {
           <ResourceAvailabilityCalendar resource={resource} />
         </div>
 
+        {/* ── Right column: actions + schedule + admin ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          {/* Book Resource */}
+          <Panel title="Book This Resource" icon={Clock}>
+            {resource.status === 'ACTIVE' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <p style={{ margin: 0, fontSize: '13px', color: '#64748b', lineHeight: 1.5 }}>
+                  Submit a booking request for this facility. An admin will review and approve it.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/bookings?resourceId=${id}`)}
+                  style={{
+                    background: '#10b981',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '11px 14px',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={(e) => (e.target.style.background = '#059669')}
+                  onMouseLeave={(e) => (e.target.style.background = '#10b981')}
+                >
+                  <Clock size={15} />
+                  Request a Booking
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowQR(!showQR)}
+                  style={{
+                    background: 'transparent',
+                    color: '#475569',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    padding: '9px 14px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <QrCode size={14} />
+                  {showQR ? 'Hide QR Code' : 'Share via QR Code'}
+                </button>
+                {showQR && (
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px',
+                    background: '#f8fafc',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                  }}>
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.href)}`}
+                      alt="QR Code"
+                      style={{ width: '140px', height: '140px' }}
+                    />
+                    <p style={{ margin: 0, fontSize: '12px', color: '#64748b', textAlign: 'center' }}>
+                      Scan to open this resource page
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{
+                padding: '12px',
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '8px',
+                fontSize: '13px',
+                color: '#dc2626',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <AlertTriangle size={15} />
+                This resource is currently <strong>{resource.status.replace(/_/g, ' ')}</strong> and cannot be booked.
+              </div>
+            )}
+          </Panel>
+
+          {/* Upcoming Schedule */}
+          <Panel title="Upcoming Schedule" icon={CalendarDays}>
+            {loadingUpcoming ? (
+              <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Loading schedule...</p>
+            ) : upcomingBookings.length === 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px' }}>
+                <CheckCircle2 size={16} color="#15803d" />
+                <span style={{ fontSize: '13px', color: '#15803d', fontWeight: '700' }}>
+                  No upcoming bookings — fully available
+                </span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#64748b' }}>
+                  Next {upcomingBookings.length} approved booking{upcomingBookings.length > 1 ? 's' : ''}:
+                </p>
+                {upcomingBookings.map((b) => (
+                  <div key={b.id} style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                    padding: '8px 10px',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    borderLeft: '3px solid #10b981',
+                  }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a' }}>
+                      {fmtDate(b.startTime)}
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#475569' }}>
+                      {fmtTime(b.startTime)} – {fmtTime(b.endTime)}
+                    </span>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => navigate(`/bookings?resourceId=${id}`)}
+                  style={{
+                    marginTop: '4px',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    border: '1px dashed #cbd5e1',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    color: '#64748b',
+                    fontWeight: '700',
+                  }}
+                >
+                  Book an available slot →
+                </button>
+              </div>
+            )}
+          </Panel>
+
+          {/* Operations Summary */}
           <Panel title="Operations Summary" icon={Building2}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '11px', fontSize: '13px' }}>
               <SummaryRow label="Type" value={meta.label} />
@@ -217,10 +401,14 @@ export default function ResourceDetailPage() {
               {resource.capacity && <SummaryRow label="Capacity" value={`${resource.capacity} seats`} />}
               <SummaryRow label="Opens" value={resource.availabilityStart} />
               <SummaryRow label="Closes" value={resource.availabilityEnd} />
-              <SummaryRow label="Daily Hours" value={`${Math.max(0, timeToHour(resource.availabilityEnd) - timeToHour(resource.availabilityStart))}h`} />
+              <SummaryRow
+                label="Daily Hours"
+                value={`${Math.max(0, timeToHour(resource.availabilityEnd) - timeToHour(resource.availabilityStart))}h`}
+              />
             </div>
           </Panel>
 
+          {/* Admin Controls */}
           {isAdmin && (
             <Panel title="Admin Controls" icon={Wrench}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -258,6 +446,8 @@ export default function ResourceDetailPage() {
     </div>
   );
 }
+
+// ─── Small helpers ───────────────────────────────────────────────────────────
 
 function timeToHour(timeStr) {
   if (!timeStr) return 0;
