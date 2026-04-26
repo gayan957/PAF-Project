@@ -16,6 +16,8 @@ export default function ResourcesPage() {
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({});
   const [viewMode, setViewMode] = useState('grid');
+  const [bookingResource, setBookingResource] = useState(null);
+  const [bookingSuccess, setBookingSuccess] = useState('');
 
   const fetchResources = useCallback(async () => {
     setLoading(true);
@@ -47,6 +49,22 @@ export default function ResourcesPage() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1320px', margin: '0 auto' }}>
+      {bookingSuccess && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '10px',
+          padding: '12px 16px', marginBottom: '16px',
+          background: '#f0fdf4', border: '1px solid #bbf7d0',
+          borderRadius: '8px', fontSize: '14px', color: '#15803d', fontWeight: '600',
+        }}>
+          ✓ {bookingSuccess}
+          <button
+            type="button"
+            onClick={() => setBookingSuccess('')}
+            style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#15803d', fontSize: '16px', lineHeight: 1 }}
+          >×</button>
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px', marginBottom: '24px' }}>
         <div>
           <p style={{ margin: '0 0 6px', color: '#0f766e', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0' }}>
@@ -125,7 +143,7 @@ export default function ResourcesPage() {
                   gap: '18px',
                 }}>
                   {resources.map((resource) => (
-                    <ResourceCard key={resource.id} resource={resource} />
+                    <ResourceCard key={resource.id} resource={resource} onBook={setBookingResource} />
                   ))}
                 </div>
               ) : (
@@ -147,6 +165,17 @@ export default function ResourcesPage() {
           )}
         </div>
       </div>
+
+      {bookingResource && (
+        <BookingFormModal
+          resource={bookingResource}
+          onClose={() => setBookingResource(null)}
+          onSuccess={() => {
+            setBookingResource(null);
+            setBookingSuccess('Booking request submitted! Pending admin approval.');
+          }}
+        />
+      )}
     </div>
   );
 }
