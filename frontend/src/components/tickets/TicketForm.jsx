@@ -8,13 +8,33 @@ const TicketForm = ({ onSuccess, onClose }) => {
         description: '',
         priority: 'MEDIUM',
         location: '',
-        contactInfo: ''
+        contactNumber: ''
     });
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [contactNumberError, setContactNumberError] = useState('');
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        
+        // Validation for contact number - only digits and max 10
+        if (name === 'contactNumber') {
+            const onlyDigits = value.replace(/\D/g, '');
+            if (onlyDigits.length > 10) {
+                setContactNumberError('Contact number must be exactly 10 digits');
+                return;
+            }
+            if (onlyDigits.length > 0 && onlyDigits.length < 10) {
+                setContactNumberError(`${onlyDigits.length}/10 digits`);
+            } else if (onlyDigits.length === 10) {
+                setContactNumberError('');
+            } else {
+                setContactNumberError('');
+            }
+            setFormData({ ...formData, [name]: onlyDigits });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const handleFileChange = (e) => {
@@ -24,6 +44,13 @@ const TicketForm = ({ onSuccess, onClose }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Validate contact number
+        if (formData.contactNumber.length !== 10) {
+            alert('Please enter a valid 10-digit contact number');
+            return;
+        }
+        
         setLoading(true);
         try {
             // 1. Create Ticket
@@ -190,16 +217,32 @@ const TicketForm = ({ onSuccess, onClose }) => {
                         </div>
 
                         <div className="form-group">
-                            <label style={{ color: '#334155', fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Contact Info</label>
+                            <label style={{ color: '#334155', fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Contact Number</label>
                             <input 
-                                type="text" 
-                                name="contactInfo" 
-                                value={formData.contactInfo} 
+                                type="tel" 
+                                name="contactNumber" 
+                                value={formData.contactNumber} 
                                 onChange={handleChange} 
-                                placeholder="Phone number or alternative email" 
+                                placeholder="Enter 10-digit phone number" 
                                 className="form-input" 
-                                style={{ background: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a', height: '45px' }}
+                                maxLength="10"
+                                style={{ 
+                                    background: '#f8fafc', 
+                                    borderColor: contactNumberError && formData.contactNumber.length > 0 && formData.contactNumber.length < 10 ? '#ef4444' : '#e2e8f0', 
+                                    color: '#0f172a', 
+                                    height: '45px'
+                                }}
                             />
+                            {contactNumberError && formData.contactNumber.length > 0 && formData.contactNumber.length < 10 && (
+                                <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                                    {contactNumberError}
+                                </p>
+                            )}
+                            {formData.contactNumber.length === 10 && (
+                                <p style={{ color: '#10b981', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                                    ✓ Valid contact number
+                                </p>
+                            )}
                         </div>
 
                         <div className="form-group">
@@ -223,15 +266,16 @@ const TicketForm = ({ onSuccess, onClose }) => {
                             </button>
                             <button 
                                 type="submit" 
-                                disabled={loading} 
+                                disabled={loading || formData.contactNumber.length !== 10} 
                                 className="btn" 
                                 style={{ 
-                                    background: 'linear-gradient(to right, #8b5cf6, #fe7096)', 
+                                    background: loading || formData.contactNumber.length !== 10 ? '#cbd5e1' : 'linear-gradient(to right, #8b5cf6, #fe7096)', 
                                     color: 'white',
                                     borderRadius: '0.75rem',
                                     padding: '0.75rem 2.5rem',
                                     fontWeight: '600',
-                                    boxShadow: '0 10px 15px -3px rgba(139, 92, 246, 0.3)'
+                                    boxShadow: loading || formData.contactNumber.length !== 10 ? 'none' : '0 10px 15px -3px rgba(139, 92, 246, 0.3)',
+                                    cursor: loading || formData.contactNumber.length !== 10 ? 'not-allowed' : 'pointer'
                                 }}
                             >
                                 {loading ? "Creating..." : "Submit Ticket"}
