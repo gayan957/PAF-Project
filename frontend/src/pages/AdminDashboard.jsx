@@ -235,8 +235,8 @@ const AdminDashboard = () => {
             </div>
 
             {/* Original Functionality - Styled to fit */}
-            <div className="glass-panel content-card" style={{ marginTop: '2rem' }}>
-                <h2 style={{ border: 'none' }}>Ticket Management Overview <span style={{fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 'normal', marginLeft: '10px'}}>(Total: {stats.tickets})</span></h2>
+            <div className="glass-panel content-card" style={{ marginTop: '2rem' ,background:'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}>
+                <h2 style={{ border: 'none',color: 'black' }}>Ticket Management Overview <span style={{fontSize: '0.85rem',  fontWeight: 'normal', marginLeft: '10px'}}>(Total: {stats.tickets})</span></h2>
                 <TicketList 
                     tickets={tickets} 
                     renderActions={renderAdminActions} 

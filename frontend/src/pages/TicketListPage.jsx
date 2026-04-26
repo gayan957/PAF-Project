@@ -44,21 +44,19 @@ const TicketListPage = () => {
             onClick={() => handleDeleteTicket(ticket.id)} 
             title="Delete ticket"
             style={{
-                background: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.25)',
-                color: '#f87171',
-                padding: '0.45rem 0.6rem',
-                borderRadius: '0.5rem',
+                width: '34px',
+                height: '32px',
+                borderRadius: '8px',
+                border: '1px solid #dc262624',
+                color: '#dc2626',
+                background: '#dc26260d',
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'all 0.2s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.25)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.5)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.25)'; }}
         >
-            <Trash2 size={15} />
+            <Trash2 size={16} />
         </button>
     );
 
@@ -69,64 +67,63 @@ const TicketListPage = () => {
     if (loading) return <div className="loader"></div>;
 
     return (
-        <div className="page-container">
-            <div className="container">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div style={{
-                            width: 44, height: 44, borderRadius: '12px',
-                            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '0 4px 12px rgba(59,130,246,0.4)'
-                        }}>
-                            <Plus size={22} color="#fff" />
-                        </div>
-                        <div>
-                            <h1 style={{ fontSize: '1.4rem', fontWeight: '700', color: 'rgb(98, 97, 97)', margin: 0 }}>All Tickets</h1>
-                            <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>{tickets.length} support tickets</p>
-                        </div>
-                    </div>
-                    <button onClick={() => setShowForm(true)} className="btn btn-primary" style={{ borderRadius: '0.5rem' }}>
-                        <Plus size={18} style={{ marginRight: '8px' }} />
-                        New Ticket
-                    </button>
+        <div style={{ padding: '24px', maxWidth: '1340px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px', marginBottom: '24px' }}>
+                <div>
+                    <p style={eyebrow}>Support Services</p>
+                    <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '850', color: '#0f172a', letterSpacing: '0' }}>
+                        All Tickets
+                    </h1>
+                    <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: '14px' }}>
+                        Manage and track support requests, priority levels, and resolution status.
+                    </p>
                 </div>
 
-                {/* Priority Stats Row */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-                    {Object.entries(priorityConfig).map(([key, cfg]) => {
-                        const count = tickets.filter(t => t.priority === key).length;
-                        const Icon = cfg.icon;
-                        return (
-                            <div key={key} style={{
-                                background: cfg.bg, 
-                                border: `1px solid ${cfg.border}`,
-                                borderRadius: '0.75rem', 
-                                padding: '1rem',
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                gap: '0.75rem'
-                            }}>
-                                <div style={{
-                                    width: 36, height: 36, borderRadius: '8px',
-                                    background: `${cfg.border}`, 
-                                    display: 'flex',
-                                    alignItems: 'center', 
-                                    justifyContent: 'center'
-                                }}>
-                                    <Icon size={18} color={cfg.color} />
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: '1.4rem', fontWeight: '700', color: cfg.color, lineHeight: 1 }}>{count}</div>
-                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>{cfg.label}</div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                <TicketTable tickets={tickets} renderActions={renderUserActions} />
+                <button onClick={() => setShowForm(true)} style={primaryButton}>
+                    <Plus size={18} />
+                    New Ticket
+                </button>
             </div>
+
+            {/* Priority Stats Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px', marginBottom: '22px' }}>
+                {Object.entries(priorityConfig).map(([key, cfg]) => {
+                    const count = tickets.filter(t => t.priority === key).length;
+                    const Icon = cfg.icon;
+                    return (
+                        <div key={key} style={{
+                            background: '#fff',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            padding: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            minHeight: '76px',
+                        }}>
+                            <div style={{
+                                width: '42px',
+                                height: '42px',
+                                borderRadius: '8px',
+                                background: `${cfg.color}14`,
+                                color: cfg.color,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                            }}>
+                                <Icon size={22} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '22px', fontWeight: '850', color: '#0f172a', lineHeight: 1 }}>{count}</div>
+                                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '5px', fontWeight: '700' }}>{cfg.label}</div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <TicketTable tickets={tickets} renderActions={renderUserActions} />
 
             {showForm && (
                 <TicketForm 
@@ -136,6 +133,30 @@ const TicketListPage = () => {
             )}
         </div>
     );
+};
+
+const eyebrow = {
+    margin: '0 0 6px',
+    color: '#0f766e',
+    fontSize: '12px',
+    fontWeight: '850',
+    textTransform: 'uppercase',
+    letterSpacing: '0',
+};
+
+const primaryButton = {
+    padding: '10px 16px',
+    borderRadius: '8px',
+    border: 'none',
+    background: '#0f766e',
+    color: '#fff',
+    fontWeight: '850',
+    cursor: 'pointer',
+    fontSize: '14px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    boxShadow: '0 8px 18px rgba(15, 118, 110, 0.22)',
 };
 
 export default TicketListPage;

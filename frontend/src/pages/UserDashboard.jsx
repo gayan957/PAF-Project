@@ -65,33 +65,33 @@ const UserDashboard = () => {
                         {/* Course Card */}
                         <div className="colored-card card-yellow">
                             <span className="card-tag">MAT 101</span>
-                            <h3 style={{ color: '#f59e0b' }}>Mathematics</h3>
+                            <h3>Mathematics</h3>
                             <p className="card-subtitle">Enrolled Courses: {stats.courses}</p>
                             <div className="card-footer">
                                 <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Updated recently</span>
-                                <button className="card-btn" style={{ background: '#f59e0b' }}>View</button>
+                                <button className="card-btn">View</button>
                             </div>
                         </div>
                         
                         {/* Ticket Card */}
                         <div className="colored-card card-purple">
                             <span className="card-tag">SUPPORT</span>
-                            <h3 style={{ color: '#8b5cf6' }}>Active Tickets</h3>
+                            <h3>Active Tickets</h3>
                             <p className="card-subtitle">Pending Requests: {stats.active}</p>
                             <div className="card-footer">
                                 <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Check status</span>
-                                <button className="card-btn" style={{ background: '#8b5cf6' }}>Manage</button>
+                                <button className="card-btn">Manage</button>
                             </div>
                         </div>
 
                         {/* Booking Card */}
                         <div className="colored-card card-pink">
                             <span className="card-tag">BOOKING</span>
-                            <h3 style={{ color: '#ec4899' }}>Facilities</h3>
+                            <h3>Facilities</h3>
                             <p className="card-subtitle">Upcoming Bookings: {stats.bookings}</p>
                             <div className="card-footer">
                                 <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Lab 304</span>
-                                <button className="card-btn" style={{ background: '#ec4899' }}>Details</button>
+                                <button className="card-btn">Details</button>
                             </div>
                         </div>
                     </div>

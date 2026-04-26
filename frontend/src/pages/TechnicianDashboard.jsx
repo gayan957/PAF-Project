@@ -70,41 +70,41 @@ const TechnicianDashboard = () => {
         <div className="page-container">
             <div className="container">
                 <div className="dashboard-header">
-                    <h1 className="dashboard-title">Technician Dashboard</h1>
+                    <h1 className="dashboard-title" style={{ color:'black'}}>Technician Dashboard</h1>
                 </div>
 
                 <div className="dashboard-grid">
-                    <div className="glass-panel stat-card">
+                    <div className="glass-panel stat-card" style={{ background: 'white' }}>
                         <div className="stat-icon" style={{ color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.1)' }}>
                             <AlertCircle size={24} />
                         </div>
                         <div className="stat-content">
                             <h3>Pending</h3>
-                            <p>{stats.pending}</p>
+                            <p style={{ color: 'black' }}>{stats.pending}</p>
                         </div>
                     </div>
-                    <div className="glass-panel stat-card">
+                    <div className="glass-panel stat-card" style={{ background: 'white' }}>
                         <div className="stat-icon" style={{ color: 'var(--primary)', background: 'rgba(59, 130, 246, 0.1)' }}>
                             <Wrench size={24} />
                         </div>
                         <div className="stat-content">
                             <h3>In Progress</h3>
-                            <p>{stats.inProgress}</p>
+                            <p style={{ color: 'black' }}>{stats.inProgress}</p>
                         </div>
                     </div>
-                    <div className="glass-panel stat-card">
+                    <div className="glass-panel stat-card" style={{ background: 'white' }}>
                         <div className="stat-icon" style={{ color: 'var(--success)', background: 'rgba(16, 185, 129, 0.1)' }}>
                             <CheckCircle size={24} />
                         </div>
                         <div className="stat-content">
                             <h3>Resolved</h3>
-                            <p>{stats.resolved}</p>
+                            <p style={{ color: 'black' }}>{stats.resolved}</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="glass-panel content-card" style={{ marginTop: '2rem' }}>
-                    <h2 style={{ border: 'none' }}>Assigned Support Tickets</h2>
+                <div className="glass-panel content-card" style={{ marginTop: '2rem',background:'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                    <h2 style={{ border: 'none',color:'black' }}>Assigned Support Tickets</h2>
                     <TicketList 
                         tickets={tickets.filter(t => t.status !== 'RESOLVED')} 
                         renderActions={renderTechnicianActions} 
@@ -112,8 +112,8 @@ const TechnicianDashboard = () => {
                 </div>
 
                 {tickets.filter(t => t.status === 'RESOLVED').length > 0 && (
-                    <div className="glass-panel content-card" style={{ marginTop: '2rem' }}>
-                        <h2 style={{ border: 'none' }}>Recent Resolutions</h2>
+                    <div className="glass-panel content-card" style={{ marginTop: '2rem' ,background:'white'}}>
+                        <h2 style={{ border: 'none',color:'black' }}>Recent Resolutions</h2>
                         <TicketList tickets={tickets.filter(t => t.status === 'RESOLVED')} />
                     </div>
                 )}
