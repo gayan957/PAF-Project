@@ -46,6 +46,9 @@ public class Resource {
 
     private String imageUrl;
 
+    @Column(columnDefinition = "TEXT")
+    private String imageGallery;
+
     private String statusReason;
 
     private String statusChangedBy;

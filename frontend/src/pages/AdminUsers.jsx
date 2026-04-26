@@ -3,20 +3,21 @@ import api from '../api/axios';
 import { Trash2, Users, CheckCircle, XCircle, Shield, User, Wrench, Search } from 'lucide-react';
 
 const roleConfig = {
-    ROLE_ADMIN:      { label: 'Admin',      color: '#a78bfa', bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.3)' },
-    ROLE_TECHNICIAN: { label: 'Technician', color: '#34d399', bg: 'rgba(52,211,153,0.15)',  border: 'rgba(52,211,153,0.3)'  },
-    ROLE_USER:       { label: 'User',       color: '#60a5fa', bg: 'rgba(96,165,250,0.15)',  border: 'rgba(96,165,250,0.3)'  },
+    ROLE_ADMIN:      { label: 'Admin',      color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe', icon: Shield },
+    ROLE_TECHNICIAN: { label: 'Technician', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', icon: Wrench },
+    ROLE_USER:       { label: 'User',       color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', icon: User },
 };
 
 const RoleBadge = ({ role }) => {
     const cfg = roleConfig[role] || roleConfig.ROLE_USER;
-    const Icon = role === 'ROLE_ADMIN' ? Shield : role === 'ROLE_TECHNICIAN' ? Wrench : User;
+    const Icon = cfg.icon;
     return (
         <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-            padding: '0.25rem 0.65rem', borderRadius: '999px',
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            padding: '5px 10px', borderRadius: '999px',
             background: cfg.bg, border: `1px solid ${cfg.border}`,
-            color: cfg.color, fontSize: '0.78rem', fontWeight: '600',
+            color: cfg.color, fontSize: '12px', fontWeight: '800',
+            textTransform: 'uppercase'
         }}>
             <Icon size={12} /> {cfg.label}
         </span>
@@ -27,11 +28,7 @@ const getInitials = (name = '') =>
     name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
 const avatarColors = [
-    'linear-gradient(135deg, #6366f1, #8b5cf6)',
-    'linear-gradient(135deg, #06b6d4, #3b82f6)',
-    'linear-gradient(135deg, #10b981, #06b6d4)',
-    'linear-gradient(135deg, #f59e0b, #ef4444)',
-    'linear-gradient(135deg, #ec4899, #8b5cf6)',
+    '#f8fafc',
 ];
 
 const AdminUsers = () => {
@@ -97,172 +94,141 @@ const AdminUsers = () => {
     );
 
     return (
-        <div className="page-container">
-            {/* Page Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{
-                        width: 44, height: 44, borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 4px 12px rgba(99,102,241,0.4)'
-                    }}>
-                        <Users size={22} color="#fff" />
-                    </div>
-                    <div>
-                        <h1 style={{ fontSize: '1.4rem', fontWeight: '700', color: 'rgb(98, 97, 97)', margin: 0 }}>User Management</h1>
-                        <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>{users.length} registered users</p>
-                    </div>
+        <div style={{ padding: '24px', maxWidth: '1340px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px', marginBottom: '24px' }}>
+                <div>
+                    <p style={eyebrow}>Administration Control</p>
+                    <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '850', color: '#0f172a', letterSpacing: '0' }}>
+                        User Management
+                    </h1>
+                    <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: '14px' }}>
+                        Manage platform access, assign technical roles, and oversee user activity.
+                    </p>
                 </div>
 
-                {/* Search Bar */}
-                <div style={{ position: 'relative', minWidth: '250px' }}>
-                    <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+                <div style={{ position: 'relative', width: '320px' }}>
+                    <Search size={17} style={{ position: 'absolute', left: '13px', top: '12px', color: '#64748b' }} />
                     <input
-                        type="text"
-                        placeholder="Search by name or email..."
                         value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        style={{
-                            width: '100%', padding: '0.6rem 1rem 0.6rem 2.25rem',
-                            background: 'rgba(255,255,255,0.05)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: '0.5rem', color: '#f8fafc',
-                            fontFamily: 'inherit', fontSize: '0.875rem', outline: 'none',
-                        }}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Search by name or email..."
+                        style={{ ...inputStyle, paddingLeft: '40px' }}
                     />
                 </div>
             </div>
 
-            {/* Feedback Banner */}
             {feedback.message && (
                 <div style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    padding: '0.75rem 1rem', marginBottom: '1rem', borderRadius: '0.5rem',
-                    background: feedback.type === 'success' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
-                    border: `1px solid ${feedback.type === 'success' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                    color: feedback.type === 'success' ? '#10b981' : '#ef4444',
-                    fontSize: '0.9rem', fontWeight: '500',
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '12px 16px', marginBottom: '20px', borderRadius: '8px',
+                    background: feedback.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                    border: `1px solid ${feedback.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
+                    color: feedback.type === 'success' ? '#166534' : '#991b1b',
+                    fontSize: '14px', fontWeight: '700',
                 }}>
                     {feedback.type === 'success' ? <CheckCircle size={18} /> : <XCircle size={18} />}
                     {feedback.message}
                 </div>
             )}
 
-            {/* Stats Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '14px', marginBottom: '22px' }}>
                 {Object.entries(roleConfig).map(([key, cfg]) => {
                     const count = users.filter(u => u.role === key).length;
-                    const Icon = key === 'ROLE_ADMIN' ? Shield : key === 'ROLE_TECHNICIAN' ? Wrench : User;
+                    const Icon = cfg.icon;
                     return (
                         <div key={key} style={{
-                            background: cfg.bg, border: `1px solid ${cfg.border}`,
-                            borderRadius: '0.75rem', padding: '1rem',
-                            display: 'flex', alignItems: 'center', gap: '0.75rem'
+                            background: '#fff',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            padding: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            minHeight: '76px',
                         }}>
                             <div style={{
-                                width: 36, height: 36, borderRadius: '8px',
-                                background: `${cfg.border}`, display: 'flex',
-                                alignItems: 'center', justifyContent: 'center'
+                                width: '42px',
+                                height: '42px',
+                                borderRadius: '8px',
+                                background: `${cfg.color}14`,
+                                color: cfg.color,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
                             }}>
-                                <Icon size={18} color={cfg.color} />
+                                <Icon size={22} />
                             </div>
                             <div>
-                                <div style={{ fontSize: '1.4rem', fontWeight: '700', color: cfg.color, lineHeight: 1 }}>{count}</div>
-                                <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>{cfg.label}s</div>
+                                <div style={{ fontSize: '22px', fontWeight: '850', color: '#0f172a', lineHeight: 1 }}>{count}</div>
+                                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '5px', fontWeight: '700' }}>{cfg.label}s</div>
                             </div>
                         </div>
                     );
                 })}
             </div>
 
-            {/* Table Card */}
-            <div style={{
-                background: 'rgba(30, 41, 59, 0.7)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '1rem',
-                overflow: 'hidden',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-                opacity: actionLoading ? 0.7 : 1,
-                transition: 'opacity 0.2s'
-            }}>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
                 <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                         <thead>
-                            <tr style={{ background: 'rgba(99,102,241,0.1)', borderBottom: '1px solid rgba(99,102,241,0.2)' }}>
-                                <th style={{ padding: '1rem 1.25rem', color: '#a5b4fc', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>#</th>
-                                <th style={{ padding: '1rem 1.25rem', color: '#a5b4fc', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>User</th>
-                                <th style={{ padding: '1rem 1.25rem', color: '#a5b4fc', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>Email</th>
-                                <th style={{ padding: '1rem 1.25rem', color: '#a5b4fc', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>Current Role</th>
-                                <th style={{ padding: '1rem 1.25rem', color: '#a5b4fc', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>Change Role</th>
-                                <th style={{ padding: '1rem 1.25rem', color: '#a5b4fc', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Actions</th>
+                            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                                {['#', 'User', 'Email', 'Current Role', 'Change Role', 'Actions'].map((heading) => (
+                                    <th key={heading} style={{
+                                        padding: '12px 16px',
+                                        textAlign: heading === 'Actions' ? 'right' : 'left',
+                                        fontWeight: '850',
+                                        color: '#334155',
+                                        fontSize: '12px',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0',
+                                    }}>
+                                        {heading}
+                                    </th>
+                                ))}
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody style={{ opacity: actionLoading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
                             {filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                                    <td colSpan={6} style={{ padding: '42px', textAlign: 'center', color: '#94a3b8', fontWeight: '700' }}>
                                         No users found.
                                     </td>
                                 </tr>
                             ) : filtered.map((user, index) => (
-                                <tr key={user.id} style={{
-                                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                                    transition: 'background 0.15s',
-                                    cursor: 'default',
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                >
-                                    {/* Index */}
-                                    <td style={{ padding: '1rem 1.25rem', color: '#475569', fontSize: '0.85rem' }}>
-                                        {index + 1}
-                                    </td>
-
-                                    {/* Avatar + Name */}
-                                    <td style={{ padding: '0.85rem 1.25rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <tr key={user.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                    <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '13px' }}>{index + 1}</td>
+                                    <td style={{ padding: '14px 16px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <div style={{
-                                                width: 38, height: 38, borderRadius: '50%',
-                                                background: avatarColors[index % avatarColors.length],
+                                                width: '36px', height: '36px', borderRadius: '50%',
+                                                background: '#f1f5f9', border: '1px solid #e2e8f0',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontWeight: '700', fontSize: '0.85rem', color: '#fff',
+                                                fontWeight: '800', fontSize: '12px', color: '#0f172a',
                                                 flexShrink: 0,
                                             }}>
                                                 {getInitials(user.name)}
                                             </div>
-                                            <span style={{ color: '#f1f5f9', fontWeight: '500', fontSize: '0.9rem' }}>{user.name}</span>
+                                            <span style={{ color: '#0f172a', fontWeight: '800', fontSize: '14px' }}>{user.name}</span>
                                         </div>
                                     </td>
-
-                                    {/* Email */}
-                                    <td style={{ padding: '1rem 1.25rem', color: '#94a3b8', fontSize: '0.875rem' }}>
-                                        {user.email}
-                                    </td>
-
-                                    {/* Current Role Badge */}
-                                    <td style={{ padding: '1rem 1.25rem' }}>
-                                        <RoleBadge role={user.role} />
-                                    </td>
-
-                                    {/* Role Selector */}
-                                    <td style={{ padding: '0.85rem 1.25rem' }}>
+                                    <td style={{ padding: '14px 16px', color: '#475569', fontSize: '13px' }}>{user.email}</td>
+                                    <td style={{ padding: '14px 16px' }}><RoleBadge role={user.role} /></td>
+                                    <td style={{ padding: '14px 16px' }}>
                                         <select
                                             value={user.role}
                                             onChange={e => handleRoleChange(user.id, e.target.value)}
                                             disabled={actionLoading}
                                             style={{
-                                                background: 'rgba(15,23,42,0.8)',
-                                                color: '#e2e8f0',
-                                                border: '1px solid rgba(99,102,241,0.3)',
-                                                padding: '0.45rem 0.75rem',
-                                                borderRadius: '0.5rem',
+                                                background: '#fff',
+                                                color: '#334155',
+                                                border: '1px solid #d1d5db',
+                                                padding: '6px 12px',
+                                                borderRadius: '8px',
+                                                fontSize: '13px',
+                                                fontWeight: '600',
                                                 outline: 'none',
-                                                fontFamily: 'inherit',
-                                                fontSize: '0.85rem',
                                                 cursor: actionLoading ? 'not-allowed' : 'pointer',
-                                                appearance: 'auto',
                                             }}
                                         >
                                             <option value="ROLE_USER">User</option>
@@ -270,29 +236,25 @@ const AdminUsers = () => {
                                             <option value="ROLE_ADMIN">Admin</option>
                                         </select>
                                     </td>
-
-                                    {/* Delete Button */}
-                                    <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
+                                    <td style={{ padding: '14px 16px', textAlign: 'right' }}>
                                         <button
                                             onClick={() => handleDeleteUser(user.id)}
                                             disabled={actionLoading}
                                             title="Delete user"
                                             style={{
-                                                background: 'rgba(239,68,68,0.1)',
-                                                border: '1px solid rgba(239,68,68,0.25)',
-                                                color: '#f87171',
-                                                padding: '0.45rem 0.6rem',
-                                                borderRadius: '0.5rem',
-                                                cursor: actionLoading ? 'not-allowed' : 'pointer',
+                                                width: '34px',
+                                                height: '32px',
+                                                borderRadius: '8px',
+                                                border: '1px solid #dc262624',
+                                                color: '#dc2626',
+                                                background: '#dc26260d',
+                                                cursor: 'pointer',
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                transition: 'all 0.2s',
                                             }}
-                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.25)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.5)'; }}
-                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.25)'; }}
                                         >
-                                            <Trash2 size={15} />
+                                            <Trash2 size={16} />
                                         </button>
                                     </td>
                                 </tr>
@@ -301,19 +263,33 @@ const AdminUsers = () => {
                     </table>
                 </div>
 
-                {/* Footer */}
-                <div style={{
-                    padding: '0.75rem 1.25rem',
-                    borderTop: '1px solid rgba(255,255,255,0.06)',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    color: '#64748b', fontSize: '0.8rem'
-                }}>
+                <div style={{ padding: '12px 16px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b', fontSize: '12px', fontWeight: '700' }}>
                     <span>Showing {filtered.length} of {users.length} users</span>
-                    {actionLoading && <span style={{ color: '#6366f1' }}>Saving changes…</span>}
+                    {actionLoading && <span style={{ color: '#0f766e' }}>Saving changes…</span>}
                 </div>
             </div>
         </div>
     );
+};
+
+const eyebrow = {
+    margin: '0 0 6px',
+    color: '#0f766e',
+    fontSize: '12px',
+    fontWeight: '850',
+    textTransform: 'uppercase',
+    letterSpacing: '0',
+};
+
+const inputStyle = {
+    width: '100%',
+    padding: '10px 12px',
+    border: '1px solid #d7dde8',
+    borderRadius: '8px',
+    fontSize: '14px',
+    outline: 'none',
+    boxSizing: 'border-box',
+    background: '#fff',
 };
 
 export default AdminUsers;

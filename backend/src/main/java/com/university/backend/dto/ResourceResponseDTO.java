@@ -4,6 +4,7 @@ import com.university.backend.model.ResourceStatus;
 import com.university.backend.model.ResourceType;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -19,6 +20,7 @@ public class ResourceResponseDTO {
     private ResourceStatus status;
     private String description;
     private String imageUrl;
+    private List<String> imageUrls;
     private String statusReason;
     private String createdBy;
     private LocalDateTime createdAt;

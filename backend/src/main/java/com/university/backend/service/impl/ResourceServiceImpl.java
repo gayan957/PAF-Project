@@ -11,10 +11,17 @@ import com.university.backend.model.ResourceType;
 import com.university.backend.repository.ResourceRepository;
 import com.university.backend.service.ResourceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -23,7 +30,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ResourceServiceImpl implements ResourceService {
 
+    private static final String IMAGE_SEPARATOR = "\n";
+    private static final int MAX_RESOURCE_IMAGES = 5;
+
     private final ResourceRepository resourceRepository;
+
+    @Value("${file.upload-dir:uploads}")
+    private String uploadDir;
 
     @Override
     public Page<ResourceResponseDTO> getAllResources(ResourceType type, ResourceStatus status,
@@ -40,6 +53,7 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Override
     public ResourceResponseDTO createResource(ResourceRequestDTO req, String createdBy) {
+        List<String> imageUrls = normalizeImageUrls(req.getImageUrls(), req.getImageUrl());
         Resource resource = Resource.builder()
                 .name(req.getName())
                 .type(req.getType())
@@ -50,7 +64,32 @@ public class ResourceServiceImpl implements ResourceService {
                 .availabilityEnd(req.getAvailabilityEnd())
                 .status(req.getStatus() != null ? req.getStatus() : ResourceStatus.ACTIVE)
                 .description(req.getDescription())
-                .imageUrl(req.getImageUrl())
+                .imageUrl(primaryImageUrl(imageUrls))
+                .imageGallery(serializeImageUrls(imageUrls))
+                .createdBy(createdBy)
+                .build();
+        return toDTO(resourceRepository.save(resource));
+    }
+
+    @Override
+    public ResourceResponseDTO createResourceWithImages(ResourceRequestDTO req, String createdBy,
+            MultipartFile[] images) throws IOException {
+        List<String> imageUrls = normalizeImageUrls(req.getImageUrls(), req.getImageUrl());
+        imageUrls.addAll(storeImages(images, MAX_RESOURCE_IMAGES - imageUrls.size()));
+        validateImageCount(imageUrls);
+
+        Resource resource = Resource.builder()
+                .name(req.getName())
+                .type(req.getType())
+                .capacity(req.getCapacity())
+                .location(req.getLocation())
+                .building(req.getBuilding())
+                .availabilityStart(req.getAvailabilityStart())
+                .availabilityEnd(req.getAvailabilityEnd())
+                .status(req.getStatus() != null ? req.getStatus() : ResourceStatus.ACTIVE)
+                .description(req.getDescription())
+                .imageUrl(primaryImageUrl(imageUrls))
+                .imageGallery(serializeImageUrls(imageUrls))
                 .createdBy(createdBy)
                 .build();
         return toDTO(resourceRepository.save(resource));
@@ -68,7 +107,31 @@ public class ResourceServiceImpl implements ResourceService {
         resource.setAvailabilityEnd(req.getAvailabilityEnd());
         resource.setStatus(req.getStatus());
         resource.setDescription(req.getDescription());
-        resource.setImageUrl(req.getImageUrl());
+        List<String> imageUrls = normalizeImageUrls(req.getImageUrls(), req.getImageUrl());
+        resource.setImageUrl(primaryImageUrl(imageUrls));
+        resource.setImageGallery(serializeImageUrls(imageUrls));
+        return toDTO(resourceRepository.save(resource));
+    }
+
+    @Override
+    public ResourceResponseDTO updateResourceWithImages(Long id, ResourceRequestDTO req,
+            MultipartFile[] images) throws IOException {
+        Resource resource = findById(id);
+        resource.setName(req.getName());
+        resource.setType(req.getType());
+        resource.setCapacity(req.getCapacity());
+        resource.setLocation(req.getLocation());
+        resource.setBuilding(req.getBuilding());
+        resource.setAvailabilityStart(req.getAvailabilityStart());
+        resource.setAvailabilityEnd(req.getAvailabilityEnd());
+        resource.setStatus(req.getStatus());
+        resource.setDescription(req.getDescription());
+
+        List<String> imageUrls = normalizeImageUrls(req.getImageUrls(), req.getImageUrl());
+        imageUrls.addAll(storeImages(images, MAX_RESOURCE_IMAGES - imageUrls.size()));
+        validateImageCount(imageUrls);
+        resource.setImageUrl(primaryImageUrl(imageUrls));
+        resource.setImageGallery(serializeImageUrls(imageUrls));
         return toDTO(resourceRepository.save(resource));
     }
 
@@ -139,11 +202,114 @@ public class ResourceServiceImpl implements ResourceService {
                 .availabilityEnd(r.getAvailabilityEnd())
                 .status(r.getStatus())
                 .description(r.getDescription())
-                .imageUrl(r.getImageUrl())
+                .imageUrl(primaryImageUrl(r))
+                .imageUrls(allImageUrls(r))
                 .statusReason(r.getStatusReason())
                 .createdBy(r.getCreatedBy())
                 .createdAt(r.getCreatedAt())
                 .updatedAt(r.getUpdatedAt())
                 .build();
+    }
+
+    private List<String> storeImages(MultipartFile[] images, int remainingSlots) throws IOException {
+        List<String> storedUrls = new ArrayList<>();
+        if (images == null || images.length == 0) {
+            return storedUrls;
+        }
+
+        long validImageCount = Arrays.stream(images)
+                .filter(Objects::nonNull)
+                .filter(image -> !image.isEmpty())
+                .count();
+        if (validImageCount > remainingSlots) {
+            throw new IllegalArgumentException(
+                    "Maximum " + MAX_RESOURCE_IMAGES + " photos can be added per resource");
+        }
+
+        Path uploadPath = Paths.get(uploadDir, "resources");
+        try {
+            Files.createDirectories(uploadPath);
+        } catch (AccessDeniedException ex) {
+            throw new IOException("Cannot create resource image upload folder: " + uploadPath, ex);
+        }
+
+        for (MultipartFile image : images) {
+            if (image == null || image.isEmpty()) {
+                continue;
+            }
+            String contentType = image.getContentType();
+            if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
+                throw new IllegalArgumentException("Only image files are allowed for resource photos");
+            }
+
+            String originalName = Optional.ofNullable(image.getOriginalFilename()).orElse("resource-image");
+            String safeName = originalName.replaceAll("[^a-zA-Z0-9._-]", "_");
+            String fileName = UUID.randomUUID() + "_" + safeName;
+            Path filePath = uploadPath.resolve(fileName);
+            try {
+                Files.copy(image.getInputStream(), filePath);
+            } catch (AccessDeniedException ex) {
+                throw new IOException("Cannot save resource image to upload folder: " + uploadPath, ex);
+            }
+            storedUrls.add("/uploads/resources/" + fileName);
+        }
+
+        return storedUrls;
+    }
+
+    private List<String> normalizeImageUrls(List<String> imageUrls, String imageUrl) {
+        LinkedHashSet<String> normalized = new LinkedHashSet<>();
+        if (imageUrls != null) {
+            imageUrls.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(url -> !url.isBlank())
+                    .forEach(normalized::add);
+        }
+        if (imageUrl != null && !imageUrl.trim().isBlank()) {
+            normalized.add(imageUrl.trim());
+        }
+        List<String> normalizedUrls = new ArrayList<>(normalized);
+        validateImageCount(normalizedUrls);
+        return normalizedUrls;
+    }
+
+    private List<String> allImageUrls(Resource resource) {
+        List<String> imageUrls = parseImageUrls(resource.getImageGallery());
+        imageUrls.addAll(parseImageUrls(resource.getImageUrl()));
+        return normalizeImageUrls(imageUrls, null);
+    }
+
+    private String primaryImageUrl(Resource resource) {
+        List<String> imageUrls = allImageUrls(resource);
+        return primaryImageUrl(imageUrls);
+    }
+
+    private String primaryImageUrl(List<String> imageUrls) {
+        return imageUrls == null || imageUrls.isEmpty() ? null : imageUrls.get(0);
+    }
+
+    private String serializeImageUrls(List<String> imageUrls) {
+        return imageUrls == null || imageUrls.isEmpty()
+                ? null
+                : String.join(IMAGE_SEPARATOR, imageUrls);
+    }
+
+    private void validateImageCount(List<String> imageUrls) {
+        if (imageUrls != null && imageUrls.size() > MAX_RESOURCE_IMAGES) {
+            throw new IllegalArgumentException(
+                    "Maximum " + MAX_RESOURCE_IMAGES + " photos can be added per resource");
+        }
+    }
+
+    private List<String> parseImageUrls(String imageUrl) {
+        if (imageUrl == null || imageUrl.trim().isBlank()) {
+            return new ArrayList<>();
+        }
+        return Arrays.stream(imageUrl.split("\\R"))
+                .map(String::trim)
+                .filter(url -> !url.isBlank())
+                .distinct()
+                .collect(Collectors.toList());
     }
 }

@@ -5,7 +5,7 @@ import { getResources } from '../api/resourceApi';
 import ResourceCard from '../components/resources/ResourceCard';
 import ResourceFilter from '../components/resources/ResourceFilter';
 import StatusBadge from '../components/resources/StatusBadge';
-import BookingFormModal from '../components/bookings/BookingFormModal';
+import { getPrimaryResourceImage } from '../components/resources/resourceImages';
 
 export default function ResourcesPage() {
   const navigate = useNavigate();
@@ -206,6 +206,8 @@ function ToggleButton({ active, onClick, title, children }) {
 }
 
 function ResourceRow({ resource, onClick }) {
+  const primaryImage = getPrimaryResourceImage(resource);
+
   return (
     <button
       type="button"
@@ -224,19 +226,27 @@ function ResourceRow({ resource, onClick }) {
       }}
     >
       <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-        <div style={{
-          width: '42px',
-          height: '42px',
-          borderRadius: '8px',
-          background: '#ecfeff',
-          color: '#0f766e',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          <Building2 size={21} />
-        </div>
+        {primaryImage ? (
+          <img
+            src={primaryImage}
+            alt={resource.name}
+            style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0, border: '1px solid #e2e8f0' }}
+          />
+        ) : (
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '8px',
+            background: '#ecfeff',
+            color: '#0f766e',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <Building2 size={21} />
+          </div>
+        )}
         <div>
           <div style={{ fontWeight: '800', color: '#0f172a', fontSize: '14px' }}>{resource.name}</div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '3px' }}>{resource.building || 'Campus facility'}</div>

@@ -12,10 +12,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.net.URI;
 import java.security.Principal;
 import java.util.List;
@@ -63,7 +66,7 @@ public class ResourceController {
     }
 
     /** POST /api/v1/resources - create new resource (ADMIN only) */
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ResourceResponseDTO>> create(
             @Valid @RequestBody ResourceRequestDTO request,
@@ -76,8 +79,22 @@ public class ResourceController {
                 .body(ApiResponse.success("Resource created successfully", created));
     }
 
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ResourceResponseDTO>> createWithImages(
+            @Valid @RequestPart("resource") ResourceRequestDTO request,
+            @RequestPart(value = "images", required = false) MultipartFile[] images,
+            Principal principal) throws IOException {
+
+        String createdBy = principal != null ? principal.getName() : "admin";
+        ResourceResponseDTO created = resourceService.createResourceWithImages(request, createdBy, images);
+        return ResponseEntity
+                .created(URI.create("/api/v1/resources/" + created.getId()))
+                .body(ApiResponse.success("Resource created successfully", created));
+    }
+
     /** PUT /api/v1/resources/{id} - full update (ADMIN only) */
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ResourceResponseDTO>> update(
             @PathVariable Long id,
@@ -86,6 +103,18 @@ public class ResourceController {
         return ResponseEntity.ok(ApiResponse.success(
                 "Resource updated successfully",
                 resourceService.updateResource(id, request)));
+    }
+
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ResourceResponseDTO>> updateWithImages(
+            @PathVariable Long id,
+            @Valid @RequestPart("resource") ResourceRequestDTO request,
+            @RequestPart(value = "images", required = false) MultipartFile[] images) throws IOException {
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Resource updated successfully",
+                resourceService.updateResourceWithImages(id, request, images)));
     }
 
     /** PATCH /api/v1/resources/{id}/status - status change only (ADMIN only) */
