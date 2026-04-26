@@ -19,6 +19,24 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // Filter by status (for admin)
     Page<Booking> findByStatus(BookingStatus status, Pageable pageable);
 
+    // Filter bookings for admin search and optional date range filters
+    @Query("""
+        SELECT b FROM Booking b
+        WHERE (:status IS NULL OR b.status = :status)
+          AND (:resourceName IS NULL OR LOWER(b.resource.name) LIKE LOWER(CONCAT('%', :resourceName, '%')))
+          AND (:userEmail IS NULL OR LOWER(b.userEmail) LIKE LOWER(CONCAT('%', :userEmail, '%')))
+          AND (:fromDate IS NULL OR b.startTime >= :fromDate)
+          AND (:toDate IS NULL OR b.endTime <= :toDate)
+    """)
+    Page<Booking> findByFilters(
+        @Param("status") BookingStatus status,
+        @Param("resourceName") String resourceName,
+        @Param("userEmail") String userEmail,
+        @Param("fromDate") LocalDateTime fromDate,
+        @Param("toDate") LocalDateTime toDate,
+        Pageable pageable
+    );
+
     // *** CONFLICT CHECK QUERY ***
     // Find any APPROVED bookings for the same resource that overlap with the requested time
     @Query("""

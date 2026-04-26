@@ -110,11 +110,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<BookingResponseDTO> getAllBookings(BookingStatus status, Pageable pageable) {
-        if (status != null) {
-            return bookingRepository.findByStatus(status, pageable).map(this::toDTO);
-        }
-        return bookingRepository.findAll(pageable).map(this::toDTO);
+    public Page<BookingResponseDTO> getAllBookings(BookingStatus status, String resourceName, String userEmail, LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        return bookingRepository.findByFilters(status, resourceName, userEmail, from, to, pageable)
+            .map(this::toDTO);
     }
 
     @Override

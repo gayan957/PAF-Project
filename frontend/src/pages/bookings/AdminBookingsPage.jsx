@@ -16,18 +16,26 @@ const AdminBookingsPage = () => {
     const [bookings, setBookings]         = useState([]);
     const [loading, setLoading]           = useState(true);
     const [statusFilter, setStatusFilter] = useState('');
+    const [resourceQuery, setResourceQuery] = useState('');
+    const [userQuery, setUserQuery] = useState('');
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
     const [rejectId, setRejectId]         = useState(null);
     const [rejectReason, setRejectReason] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
     const [message, setMessage]           = useState({ text: '', type: '' });
 
-    useEffect(() => { loadBookings(); }, [statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => { loadBookings(); }, [statusFilter, resourceQuery, userQuery, fromDate, toDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const loadBookings = async () => {
         setLoading(true);
         try {
             const params = { size: 200 };
             if (statusFilter) params.status = statusFilter;
+            if (resourceQuery) params.resourceName = resourceQuery;
+            if (userQuery) params.userEmail = userQuery;
+            if (fromDate) params.from = `${fromDate}:00`;
+            if (toDate) params.to = `${toDate}:00`;
             const res = await api.get('/v1/bookings', { params });
             setBookings(res.data?.data?.content || []);
         } catch (e) {
@@ -109,6 +117,33 @@ const AdminBookingsPage = () => {
                         {s || 'All'}
                     </button>
                 ))}
+            </div>
+
+            <div className="booking-search-row">
+                <input
+                    type="search"
+                    value={resourceQuery}
+                    onChange={e => setResourceQuery(e.target.value)}
+                    placeholder="Search by resource name"
+                />
+                <input
+                    type="search"
+                    value={userQuery}
+                    onChange={e => setUserQuery(e.target.value)}
+                    placeholder="Search by user email"
+                />
+                <input
+                    type="datetime-local"
+                    value={fromDate}
+                    onChange={e => setFromDate(e.target.value)}
+                    placeholder="From"
+                />
+                <input
+                    type="datetime-local"
+                    value={toDate}
+                    onChange={e => setToDate(e.target.value)}
+                    placeholder="To"
+                />
             </div>
 
             {loading ? (

@@ -19,6 +19,7 @@ import Profile from './pages/Profile';
 import ResourcesPage from './pages/ResourcesPage';
 import ResourceDetailPage from './pages/ResourceDetailPage';
 import AdminResourcesPage from './pages/AdminResourcesPage';
+import AdminBookingsPage from './pages/bookings/AdminBookingsPage';
 import UserBookingsPage from './pages/bookings/UserBookingsPage';
 
 import Sidebar from './components/Sidebar';
@@ -56,7 +57,7 @@ function App() {
             <Route path="/admin-dashboard" element={<Layout><AdminDashboard /></Layout>} />
             <Route path="/admin/users" element={<Layout><AdminUsers /></Layout>} />
             <Route path="/admin/resources" element={<Layout><AdminResourcesPage /></Layout>} />
-
+            <Route path="/admin/bookings" element={<Layout><AdminBookingsPage /></Layout>} />
           </Route>
           
           <Route element={<ProtectedRoute allowedRoles={['ROLE_TECHNICIAN']} />}>
