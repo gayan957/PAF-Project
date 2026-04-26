@@ -40,6 +40,10 @@ const Sidebar = () => {
                             <TicketIcon size={20} />
                             <span>Ticket Management</span>
                         </NavLink>
+                        <NavLink to="/admin/resources" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <Building2 size={20} />
+                            <span>Facilities Management</span>
+                        </NavLink>
                         <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                             <User size={20} />
                             <span>Profile</span>

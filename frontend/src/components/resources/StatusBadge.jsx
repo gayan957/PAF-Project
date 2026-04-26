@@ -1,29 +1,56 @@
 import React from 'react';
+import { AlertTriangle, Ban, CheckCircle2 } from 'lucide-react';
 
-const styles = {
-  ACTIVE: { background: '#d4edda', color: '#155724', border: '1px solid #c3e6cb' },
-  OUT_OF_SERVICE: { background: '#f8d7da', color: '#721c24', border: '1px solid #f5c6cb' },
-  UNDER_MAINTENANCE: { background: '#fff3cd', color: '#856404', border: '1px solid #ffeeba' },
-};
-
-const labels = {
-  ACTIVE: 'Active',
-  OUT_OF_SERVICE: 'Out of Service',
-  UNDER_MAINTENANCE: 'Under Maintenance',
+const config = {
+  ACTIVE: {
+    label: 'Active',
+    icon: CheckCircle2,
+    background: '#dcfce7',
+    color: '#166534',
+    border: '#bbf7d0',
+  },
+  UNDER_MAINTENANCE: {
+    label: 'Under Maintenance',
+    icon: AlertTriangle,
+    background: '#fef3c7',
+    color: '#92400e',
+    border: '#fde68a',
+  },
+  OUT_OF_SERVICE: {
+    label: 'Out of Service',
+    icon: Ban,
+    background: '#fee2e2',
+    color: '#991b1b',
+    border: '#fecaca',
+  },
 };
 
 export default function StatusBadge({ status }) {
-  const style = styles[status] || { background: '#e2e3e5', color: '#383d41' };
+  const item = config[status] || {
+    label: status || 'Unknown',
+    icon: AlertTriangle,
+    background: '#f1f5f9',
+    color: '#475569',
+    border: '#e2e8f0',
+  };
+  const Icon = item.icon;
+
   return (
     <span style={{
-      ...style,
-      padding: '4px 12px',
-      borderRadius: '20px',
+      padding: '5px 10px',
+      borderRadius: '999px',
       fontSize: '12px',
-      fontWeight: '600',
-      display: 'inline-block',
+      fontWeight: '700',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      background: item.background,
+      color: item.color,
+      border: `1px solid ${item.border}`,
+      whiteSpace: 'nowrap',
     }}>
-      {labels[status] || status}
+      <Icon size={13} />
+      {item.label}
     </span>
   );
 }

@@ -28,6 +28,3 @@ export const updateResourceStatus = (id, status, reason = '') =>
 
 export const deleteResource = (id) =>
   api.delete(`/${id}`);
-
-export const getQrUrl = (id) =>
-  `http://localhost:8080/api/v1/resources/${id}/qr`;

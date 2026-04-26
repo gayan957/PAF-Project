@@ -1,15 +1,36 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Building2,
+  Clock,
+  DoorOpen,
+  Edit3,
+  FlaskConical,
+  MapPin,
+  Package,
+  ShieldCheck,
+  Trash2,
+  Users,
+  Wrench,
+} from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getResourceById, updateResourceStatus, deleteResource } from '../api/resourceApi';
-import StatusBadge from '../components/resources/StatusBadge';
+import { deleteResource, getResourceById, updateResourceStatus } from '../api/resourceApi';
 import ResourceAvailabilityCalendar from '../components/resources/ResourceAvailabilityCalendar';
+import StatusBadge from '../components/resources/StatusBadge';
 
-const typeIcons = {
-  LECTURE_HALL: '🏛️',
-  LAB: '🔬',
-  MEETING_ROOM: '📋',
-  EQUIPMENT: '📷',
+const typeMeta = {
+  LECTURE_HALL: { label: 'Lecture Hall', icon: DoorOpen, bg: '#f3e8ff', color: '#7c3aed' },
+  LAB: { label: 'Laboratory', icon: FlaskConical, bg: '#e0f2fe', color: '#0284c7' },
+  MEETING_ROOM: { label: 'Meeting Room', icon: Building2, bg: '#ccfbf1', color: '#0f766e' },
+  EQUIPMENT: { label: 'Equipment', icon: Package, bg: '#ffedd5', color: '#c2410c' },
+};
+
+const allowedTransitions = {
+  ACTIVE: ['UNDER_MAINTENANCE', 'OUT_OF_SERVICE'],
+  UNDER_MAINTENANCE: ['ACTIVE', 'OUT_OF_SERVICE'],
+  OUT_OF_SERVICE: ['UNDER_MAINTENANCE'],
 };
 
 export default function ResourceDetailPage() {
@@ -19,215 +40,218 @@ export default function ResourceDetailPage() {
   const [resource, setResource] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusLoading, setStatusLoading] = useState(false);
-  const isAdmin = user?.role === 'ROLE_ADMIN';
+  const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
 
   useEffect(() => {
     getResourceById(id)
-      .then(res => setResource(res.data.data))
+      .then((response) => setResource(response.data.data))
       .catch(() => navigate('/resources'))
       .finally(() => setLoading(false));
   }, [id, navigate]);
 
+  const meta = useMemo(() => typeMeta[resource?.type] || typeMeta.EQUIPMENT, [resource]);
+
   const handleStatusChange = async (newStatus) => {
-    const reason = prompt(`Reason for changing to ${newStatus.replace(/_/g, ' ')}:`);
+    const reason = window.prompt(`Reason for changing status to ${newStatus.replace(/_/g, ' ')}:`);
     if (reason === null) return;
+
     setStatusLoading(true);
     try {
-      const res = await updateResourceStatus(id, newStatus, reason);
-      setResource(res.data.data);
-    } catch (err) {
-      alert('Failed: ' + (err.response?.data?.message || err.message));
+      const response = await updateResourceStatus(id, newStatus, reason);
+      setResource(response.data.data);
+    } catch (error) {
+      window.alert('Failed: ' + (error.response?.data?.message || error.message));
     } finally {
       setStatusLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Remove this resource from the catalogue? This action cannot be undone.')) return;
+    if (!window.confirm('Remove this facility from the catalogue? This action cannot be undone.')) return;
     await deleteResource(id);
-    navigate('/resources');
+    navigate(isAdmin ? '/admin/resources' : '/resources');
   };
 
-  if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '32px', marginBottom: '12px' }}>⏳</div>
-        <p style={{ color: '#888' }}>Loading resource details...</p>
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+        <div style={{ textAlign: 'center', color: '#64748b' }}>
+          <Building2 size={38} />
+          <p>Loading facility details...</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   if (!resource) return null;
 
-  return (
-    <div style={{ padding: '24px', maxWidth: '1100px', margin: '0 auto' }}>
-      {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-        <button onClick={() => navigate('/resources')} style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          color: '#6b7280', fontSize: '14px', padding: 0,
-          display: 'flex', alignItems: 'center', gap: '4px',
-        }}>
-          ← Resources
-        </button>
-        <span style={{ color: '#d1d5db' }}>/</span>
-        <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>{resource.name}</span>
-      </div>
+  const TypeIcon = meta.icon;
+  const transitions = allowedTransitions[resource.status] || [];
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
-        {/* Left column */}
+  return (
+    <div style={{ padding: '24px', maxWidth: '1140px', margin: '0 auto' }}>
+      <button
+        type="button"
+        onClick={() => navigate(isAdmin ? '/admin/resources' : '/resources')}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          color: '#475569',
+          fontSize: '14px',
+          padding: 0,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '7px',
+          marginBottom: '18px',
+          fontWeight: '700',
+        }}
+      >
+        <ArrowLeft size={17} />
+        Back to {isAdmin ? 'Facilities Management' : 'Resource Catalogue'}
+      </button>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: '24px' }}>
         <div>
-          {/* Image */}
           {resource.imageUrl ? (
-            <img src={resource.imageUrl} alt={resource.name}
-              style={{ width: '100%', height: '280px', objectFit: 'cover', borderRadius: '16px', marginBottom: '20px' }} />
+            <img
+              src={resource.imageUrl}
+              alt={resource.name}
+              style={{ width: '100%', height: '286px', objectFit: 'cover', borderRadius: '8px', marginBottom: '20px', border: '1px solid #e2e8f0' }}
+            />
           ) : (
             <div style={{
-              height: '280px', borderRadius: '16px', marginBottom: '20px',
-              background: 'linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%)',
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: '8px',
+              height: '286px',
+              borderRadius: '8px',
+              marginBottom: '20px',
+              border: '1px solid #e2e8f0',
+              background: `linear-gradient(135deg, ${meta.bg} 0%, #ffffff 100%)`,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
             }}>
-              <span style={{ fontSize: '72px' }}>{typeIcons[resource.type] || '🏢'}</span>
-              <span style={{ fontSize: '14px', color: '#6b7280' }}>{resource.type?.replace(/_/g, ' ')}</span>
+              <div style={{
+                width: '76px',
+                height: '76px',
+                borderRadius: '18px',
+                background: '#fff',
+                color: meta.color,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 16px 34px rgba(15, 23, 42, 0.10)',
+              }}>
+                <TypeIcon size={38} />
+              </div>
+              <span style={{ fontSize: '14px', color: meta.color, fontWeight: '800' }}>{meta.label}</span>
             </div>
           )}
 
-          {/* Main info card */}
           <div style={{
-            background: '#fff', border: '1px solid #e5e7eb',
-            borderRadius: '16px', padding: '24px',
+            background: '#fff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            padding: '24px',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '18px', marginBottom: '18px' }}>
               <div>
-                <h1 style={{ margin: '0 0 6px', fontSize: '24px', fontWeight: '700', color: '#111' }}>
+                <p style={{ margin: '0 0 6px', color: '#0f766e', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0' }}>
+                  Facility Record
+                </p>
+                <h1 style={{ margin: 0, fontSize: '26px', fontWeight: '850', color: '#0f172a', letterSpacing: '0' }}>
                   {resource.name}
                 </h1>
-                <span style={{
-                  fontSize: '13px', color: '#6b7280', background: '#f3f4f6',
-                  padding: '3px 10px', borderRadius: '20px',
-                }}>
-                  {resource.type?.replace(/_/g, ' ')}
-                </span>
               </div>
               <StatusBadge status={resource.status} />
             </div>
 
             {resource.statusReason && (
               <div style={{
-                background: '#fffbeb', border: '1px solid #fde68a',
-                borderRadius: '8px', padding: '10px 14px',
-                fontSize: '13px', color: '#92400e', marginBottom: '16px',
+                background: '#fff7ed',
+                border: '1px solid #fed7aa',
+                borderRadius: '8px',
+                padding: '11px 14px',
+                fontSize: '13px',
+                color: '#9a3412',
+                marginBottom: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
               }}>
-                📋 {resource.statusReason}
+                <AlertTriangle size={16} />
+                {resource.statusReason}
               </div>
             )}
 
-            <hr style={{ border: 'none', borderTop: '1px solid #f0f0f0', margin: '16px 0' }} />
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <InfoItem icon="📍" label="Location" value={resource.location} />
-              {resource.building && <InfoItem icon="🏢" label="Building" value={resource.building} />}
-              {resource.capacity && <InfoItem icon="👥" label="Capacity" value={`${resource.capacity} people`} />}
-              <InfoItem icon="🕐" label="Availability" value={`${resource.availabilityStart} – ${resource.availabilityEnd}`} />
-              {resource.createdBy && <InfoItem icon="👤" label="Added by" value={resource.createdBy} />}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderTop: '1px solid #f1f5f9', paddingTop: '18px' }}>
+              <InfoItem icon={MapPin} label="Location" value={resource.location} />
+              {resource.building && <InfoItem icon={Building2} label="Building" value={resource.building} />}
+              <InfoItem icon={TypeIcon} label="Type" value={meta.label} />
+              {resource.capacity && <InfoItem icon={Users} label="Capacity" value={`${resource.capacity} people`} />}
+              <InfoItem icon={Clock} label="Operating Hours" value={`${resource.availabilityStart} to ${resource.availabilityEnd}`} />
+              {resource.createdBy && <InfoItem icon={ShieldCheck} label="Added By" value={resource.createdBy} />}
             </div>
 
             {resource.description && (
-              <>
-                <hr style={{ border: 'none', borderTop: '1px solid #f0f0f0', margin: '20px 0' }} />
-                <h4 style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
-                  About this resource
+              <div style={{ borderTop: '1px solid #f1f5f9', marginTop: '20px', paddingTop: '18px' }}>
+                <h4 style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: '800', color: '#334155' }}>
+                  Facilities Notes
                 </h4>
-                <p style={{ margin: 0, fontSize: '14px', color: '#6b7280', lineHeight: '1.7' }}>
+                <p style={{ margin: 0, fontSize: '14px', color: '#64748b', lineHeight: 1.7 }}>
                   {resource.description}
                 </p>
-              </>
+              </div>
             )}
           </div>
 
-          {/* Availability Calendar */}
           <ResourceAvailabilityCalendar resource={resource} />
         </div>
 
-        {/* Right column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Book button */}
-          {resource.status === 'ACTIVE' ? (
-            <button onClick={() => navigate(`/bookings/new?resourceId=${resource.id}`)} style={{
-              padding: '16px', borderRadius: '12px', border: 'none',
-              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-              color: '#fff', fontSize: '15px', fontWeight: '600',
-              cursor: 'pointer', width: '100%', boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
-              transition: 'transform 0.1s',
-            }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'none'}
-            >
-              📅 Book This Resource
-            </button>
-          ) : (
-            <div style={{
-              padding: '16px', borderRadius: '12px',
-              background: '#f9fafb', border: '1px solid #e5e7eb',
-              textAlign: 'center', fontSize: '14px', color: '#9ca3af',
-            }}>
-              🚫 Not available for booking
-            </div>
-          )}
-
-          {/* Resource summary card */}
-          <div style={{
-            background: '#fff', border: '1px solid #e5e7eb',
-            borderRadius: '12px', padding: '18px',
-          }}>
-            <h4 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
-              Resource Summary
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
-              <SummaryRow label="Type" value={resource.type?.replace(/_/g, ' ')} />
+          <Panel title="Operations Summary" icon={Building2}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '11px', fontSize: '13px' }}>
+              <SummaryRow label="Type" value={meta.label} />
               <SummaryRow label="Status" value={<StatusBadge status={resource.status} />} />
               {resource.capacity && <SummaryRow label="Capacity" value={`${resource.capacity} seats`} />}
-              <SummaryRow label="Open from" value={resource.availabilityStart} />
-              <SummaryRow label="Open until" value={resource.availabilityEnd} />
-              <SummaryRow label="Daily hours" value={`${timeToHour(resource.availabilityEnd) - timeToHour(resource.availabilityStart)}h`} />
+              <SummaryRow label="Opens" value={resource.availabilityStart} />
+              <SummaryRow label="Closes" value={resource.availabilityEnd} />
+              <SummaryRow label="Daily Hours" value={`${Math.max(0, timeToHour(resource.availabilityEnd) - timeToHour(resource.availabilityStart))}h`} />
             </div>
-          </div>
+          </Panel>
 
-          {/* Admin controls */}
           {isAdmin && (
-            <div style={{
-              background: '#fff', border: '1px solid #e5e7eb',
-              borderRadius: '12px', padding: '18px',
-            }}>
-              <h4 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
-                🔧 Admin Controls
-              </h4>
+            <Panel title="Admin Controls" icon={Wrench}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <button onClick={() => navigate(`/admin/resources`)} style={adminBtn('#2563eb')}>
-                  ✏️ Edit Resource
+                <button type="button" onClick={() => navigate('/admin/resources')} style={adminButton('#0f766e')}>
+                  <Edit3 size={15} />
+                  Edit in Facilities Management
                 </button>
-                {resource.status !== 'ACTIVE' && (
-                  <button onClick={() => handleStatusChange('ACTIVE')} disabled={statusLoading} style={adminBtn('#16a34a')}>
-                    ✅ Set Active
+
+                {transitions.includes('ACTIVE') && (
+                  <button type="button" onClick={() => handleStatusChange('ACTIVE')} disabled={statusLoading} style={adminButton('#16a34a')}>
+                    Mark Active
                   </button>
                 )}
-                {resource.status !== 'UNDER_MAINTENANCE' && (
-                  <button onClick={() => handleStatusChange('UNDER_MAINTENANCE')} disabled={statusLoading} style={adminBtn('#d97706')}>
-                    🔧 Set Maintenance
+                {transitions.includes('UNDER_MAINTENANCE') && (
+                  <button type="button" onClick={() => handleStatusChange('UNDER_MAINTENANCE')} disabled={statusLoading} style={adminButton('#d97706')}>
+                    Mark Under Maintenance
                   </button>
                 )}
-                {resource.status !== 'OUT_OF_SERVICE' && (
-                  <button onClick={() => handleStatusChange('OUT_OF_SERVICE')} disabled={statusLoading} style={adminBtn('#dc2626')}>
-                    ❌ Set Out of Service
+                {transitions.includes('OUT_OF_SERVICE') && (
+                  <button type="button" onClick={() => handleStatusChange('OUT_OF_SERVICE')} disabled={statusLoading} style={adminButton('#dc2626')}>
+                    Mark Out of Service
                   </button>
                 )}
-                <hr style={{ border: 'none', borderTop: '1px solid #f0f0f0', margin: '4px 0' }} />
-                <button onClick={handleDelete} style={adminBtn('#dc2626')}>
-                  🗑️ Remove Resource
+
+                <div style={{ borderTop: '1px solid #f1f5f9', margin: '4px 0' }} />
+                <button type="button" onClick={handleDelete} style={adminButton('#dc2626')}>
+                  <Trash2 size={15} />
+                  Remove Facility
                 </button>
               </div>
-            </div>
+            </Panel>
           )}
         </div>
       </div>
@@ -237,38 +261,68 @@ export default function ResourceDetailPage() {
 
 function timeToHour(timeStr) {
   if (!timeStr) return 0;
-  return parseInt(timeStr.split(':')[0]);
+  return Number(timeStr.split(':')[0]);
 }
 
-function InfoItem({ icon, label, value }) {
+function Panel({ title, icon: Icon, children }) {
+  return (
+    <div style={{
+      background: '#fff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      padding: '18px',
+    }}>
+      <h4 style={{
+        margin: '0 0 14px',
+        fontSize: '14px',
+        fontWeight: '800',
+        color: '#334155',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+      }}>
+        <Icon size={17} color="#0f766e" />
+        {title}
+      </h4>
+      {children}
+    </div>
+  );
+}
+
+function InfoItem({ icon: Icon, label, value }) {
   return (
     <div>
-      <p style={{ margin: '0 0 2px', fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>
-        {icon} {label}
+      <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#64748b', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Icon size={14} />
+        {label}
       </p>
-      <p style={{ margin: 0, fontSize: '14px', color: '#374151', fontWeight: '500' }}>
-        {value}
-      </p>
+      <p style={{ margin: 0, fontSize: '14px', color: '#0f172a', fontWeight: '700' }}>{value}</p>
     </div>
   );
 }
 
 function SummaryRow({ label, value }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={{ color: '#9ca3af' }}>{label}</span>
-      <span style={{ color: '#374151', fontWeight: '500' }}>{value}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+      <span style={{ color: '#64748b' }}>{label}</span>
+      <span style={{ color: '#0f172a', fontWeight: '800', textAlign: 'right' }}>{value}</span>
     </div>
   );
 }
 
-function adminBtn(color) {
+function adminButton(color) {
   return {
-    padding: '9px 12px', borderRadius: '8px',
-    border: `1px solid ${color}20`,
-    color: color, background: `${color}08`,
-    cursor: 'pointer', fontSize: '13px',
-    textAlign: 'left', transition: 'background 0.15s',
-    fontWeight: '500',
+    padding: '10px 12px',
+    borderRadius: '8px',
+    border: `1px solid ${color}24`,
+    color,
+    background: `${color}0d`,
+    cursor: 'pointer',
+    fontSize: '13px',
+    textAlign: 'left',
+    fontWeight: '800',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
   };
 }

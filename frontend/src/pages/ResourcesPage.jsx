@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Building2, Clock, Grid3X3, List, MapPin, Search, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getResources } from '../api/resourceApi';
 import ResourceCard from '../components/resources/ResourceCard';
 import ResourceFilter from '../components/resources/ResourceFilter';
+import StatusBadge from '../components/resources/StatusBadge';
 
 export default function ResourcesPage() {
   const navigate = useNavigate();
@@ -18,193 +20,127 @@ export default function ResourcesPage() {
     setLoading(true);
     try {
       const params = { ...filters, page, size: 12 };
-      Object.keys(params).forEach(k => { if (!params[k] && params[k] !== 0) delete params[k]; });
-      const res = await getResources(params);
-      setResources(res.data.data.content);
-      setTotalPages(res.data.data.totalPages);
-      setTotalElements(res.data.data.totalElements);
-    } catch (err) {
-      console.error('Failed to load resources', err);
+      Object.keys(params).forEach((key) => {
+        if (!params[key] && params[key] !== 0) delete params[key];
+      });
+      const response = await getResources(params);
+      const data = response.data.data;
+      setResources(data.content || []);
+      setTotalPages(data.totalPages || 0);
+      setTotalElements(data.totalElements || 0);
+    } catch (error) {
+      console.error('Failed to load resources', error);
     } finally {
       setLoading(false);
     }
   }, [filters, page]);
 
-  useEffect(() => { fetchResources(); }, [fetchResources]);
+  useEffect(() => {
+    fetchResources();
+  }, [fetchResources]);
 
-  const hasActiveFilters = Object.values(filters).some(v => v);
+  const hasActiveFilters = useMemo(
+    () => Object.values(filters).some((value) => value),
+    [filters]
+  );
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1300px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+    <div style={{ padding: '24px', maxWidth: '1320px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '26px', fontWeight: '700', color: '#111' }}>
-            Campus Resources
+          <p style={{ margin: '0 0 6px', color: '#0f766e', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0' }}>
+            Campus Facilities
+          </p>
+          <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '850', color: '#0f172a', letterSpacing: '0' }}>
+            Resource Catalogue
           </h1>
-          <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: '14px' }}>
+          <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: '14px' }}>
             {totalElements > 0
-              ? `Showing ${resources.length} of ${totalElements} resources`
-              : 'Browse and filter available facilities and equipment'}
+              ? `${totalElements} managed facilities and equipment items`
+              : 'Browse facilities and equipment maintained by the administration team'}
           </p>
         </div>
 
-        {/* View toggle */}
-        <div style={{ display: 'flex', gap: '4px', background: '#f3f4f6', borderRadius: '8px', padding: '3px' }}>
-          {[{ mode: 'grid', icon: '⊞' }, { mode: 'list', icon: '☰' }].map(({ mode, icon }) => (
-            <button key={mode} onClick={() => setViewMode(mode)} style={{
-              padding: '6px 12px', borderRadius: '6px', border: 'none',
-              background: viewMode === mode ? '#fff' : 'transparent',
-              cursor: 'pointer', fontSize: '16px',
-              boxShadow: viewMode === mode ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-            }}>
-              {icon}
-            </button>
-          ))}
+        <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', borderRadius: '8px', padding: '4px', border: '1px solid #e2e8f0' }}>
+          <ToggleButton active={viewMode === 'grid'} onClick={() => setViewMode('grid')} title="Grid view">
+            <Grid3X3 size={17} />
+          </ToggleButton>
+          <ToggleButton active={viewMode === 'list'} onClick={() => setViewMode('list')} title="List view">
+            <List size={18} />
+          </ToggleButton>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '24px', alignItems: 'start' }}>
-        {/* Filter sidebar */}
+      <div style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr)', gap: '24px', alignItems: 'start' }}>
         <div style={{ position: 'sticky', top: '20px' }}>
           <ResourceFilter
             filters={filters}
-            onChange={(f) => { setFilters(f); setPage(0); }}
-            onReset={() => { setFilters({}); setPage(0); }}
+            onChange={(nextFilters) => {
+              setFilters(nextFilters);
+              setPage(0);
+            }}
+            onReset={() => {
+              setFilters({});
+              setPage(0);
+            }}
           />
           {hasActiveFilters && (
             <div style={{
-              marginTop: '10px', padding: '8px 12px',
-              background: '#eff6ff', borderRadius: '8px',
-              fontSize: '12px', color: '#2563eb',
+              marginTop: '10px',
+              padding: '10px 12px',
+              background: '#ecfeff',
+              border: '1px solid #a5f3fc',
+              borderRadius: '8px',
+              fontSize: '12px',
+              color: '#0e7490',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontWeight: '700',
             }}>
-              🔍 Filters active — {resources.length} result{resources.length !== 1 ? 's' : ''} found
+              <Search size={14} />
+              {resources.length} result{resources.length !== 1 ? 's' : ''} match the filters
             </div>
           )}
         </div>
 
-        {/* Content */}
         <div>
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} style={{
-                  height: '280px', borderRadius: '12px',
-                  background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
-                  backgroundSize: '200% 100%',
-                  animation: 'shimmer 1.5s infinite',
-                }} />
-              ))}
-            </div>
+            <LoadingGrid />
           ) : resources.length === 0 ? (
-            <div style={{
-              textAlign: 'center', padding: '80px 40px',
-              background: '#fff', borderRadius: '16px',
-              border: '2px dashed #e5e7eb',
-            }}>
-              <div style={{ fontSize: '56px', marginBottom: '16px' }}>
-                {hasActiveFilters ? '🔍' : '🏛️'}
-              </div>
-              <h3 style={{ margin: '0 0 8px', color: '#374151' }}>
-                {hasActiveFilters ? 'No resources match your filters' : 'No resources yet'}
-              </h3>
-              <p style={{ margin: '0 0 20px', color: '#9ca3af', fontSize: '14px' }}>
-                {hasActiveFilters
-                  ? 'Try adjusting or clearing your filters'
-                  : 'Resources will appear here once added by an administrator'}
-              </p>
-              {hasActiveFilters && (
-                <button onClick={() => { setFilters({}); setPage(0); }} style={{
-                  padding: '10px 20px', borderRadius: '8px',
-                  border: '1px solid #e5e7eb', background: '#fff',
-                  cursor: 'pointer', fontSize: '14px', color: '#374151',
-                }}>
-                  Clear all filters
-                </button>
-              )}
-            </div>
+            <EmptyState
+              hasActiveFilters={hasActiveFilters}
+              onClear={() => {
+                setFilters({});
+                setPage(0);
+              }}
+            />
           ) : (
             <>
               {viewMode === 'grid' ? (
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                  gap: '20px',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                  gap: '18px',
                 }}>
-                  {resources.map(r => <ResourceCard key={r.id} resource={r} />)}
+                  {resources.map((resource) => (
+                    <ResourceCard key={resource.id} resource={resource} />
+                  ))}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {resources.map(r => (
-                    <div key={r.id} onClick={() => navigate(`/resources/${r.id}`)}
-                      style={{
-                        background: '#fff', border: '1px solid #e5e7eb',
-                        borderRadius: '12px', padding: '16px 20px',
-                        cursor: 'pointer', display: 'flex',
-                        justifyContent: 'space-between', alignItems: 'center',
-                        transition: 'box-shadow 0.2s',
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'}
-                      onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
-                    >
-                      <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                        <div style={{
-                          width: '44px', height: '44px', borderRadius: '10px',
-                          background: '#f0f4ff', display: 'flex',
-                          alignItems: 'center', justifyContent: 'center', fontSize: '22px',
-                        }}>
-                          {r.type === 'LAB' ? '🔬' : r.type === 'LECTURE_HALL' ? '🏛️' : r.type === 'MEETING_ROOM' ? '📋' : '📷'}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: '600', color: '#111' }}>{r.name}</div>
-                          <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                            📍 {r.location} {r.capacity ? `• 👥 ${r.capacity}` : ''} • 🕐 {r.availabilityStart}–{r.availabilityEnd}
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{
-                          fontSize: '12px', color: '#6b7280',
-                          background: '#f3f4f6', padding: '3px 8px', borderRadius: '6px',
-                        }}>
-                          {r.type?.replace(/_/g, ' ')}
-                        </span>
-                        {/* StatusBadge inline */}
-                        <span style={{
-                          padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600',
-                          background: r.status === 'ACTIVE' ? '#d4edda' : r.status === 'OUT_OF_SERVICE' ? '#f8d7da' : '#fff3cd',
-                          color: r.status === 'ACTIVE' ? '#155724' : r.status === 'OUT_OF_SERVICE' ? '#721c24' : '#856404',
-                        }}>
-                          {r.status?.replace(/_/g, ' ')}
-                        </span>
-                      </div>
-                    </div>
+                  {resources.map((resource) => (
+                    <ResourceRow
+                      key={resource.id}
+                      resource={resource}
+                      onClick={() => navigate(`/resources/${resource.id}`)}
+                    />
                   ))}
                 </div>
               )}
 
-              {/* Pagination */}
               {totalPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '32px' }}>
-                  <button onClick={() => setPage(0)} disabled={page === 0} style={pageBtn(page === 0)}>«</button>
-                  <button onClick={() => setPage(p => p - 1)} disabled={page === 0} style={pageBtn(page === 0)}>‹</button>
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    const pageNum = Math.max(0, Math.min(page - 2, totalPages - 5)) + i;
-                    return (
-                      <button key={pageNum} onClick={() => setPage(pageNum)} style={{
-                        ...pageBtn(false),
-                        background: page === pageNum ? '#2563eb' : '#fff',
-                        color: page === pageNum ? '#fff' : '#374151',
-                        borderColor: page === pageNum ? '#2563eb' : '#e5e7eb',
-                        fontWeight: page === pageNum ? '600' : '400',
-                      }}>
-                        {pageNum + 1}
-                      </button>
-                    );
-                  })}
-                  <button onClick={() => setPage(p => p + 1)} disabled={page >= totalPages - 1} style={pageBtn(page >= totalPages - 1)}>›</button>
-                  <button onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1} style={pageBtn(page >= totalPages - 1)}>»</button>
-                </div>
+                <Pagination page={page} totalPages={totalPages} setPage={setPage} />
               )}
             </>
           )}
@@ -214,11 +150,176 @@ export default function ResourcesPage() {
   );
 }
 
-function pageBtn(disabled) {
+function ToggleButton({ active, onClick, title, children }) {
+  return (
+    <button
+      type="button"
+      title={title}
+      onClick={onClick}
+      style={{
+        width: '36px',
+        height: '32px',
+        borderRadius: '7px',
+        border: 'none',
+        background: active ? '#fff' : 'transparent',
+        color: active ? '#0f766e' : '#64748b',
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: active ? '0 1px 4px rgba(15, 23, 42, 0.12)' : 'none',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ResourceRow({ resource, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        background: '#fff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '8px',
+        padding: '15px 18px',
+        cursor: 'pointer',
+        display: 'grid',
+        gridTemplateColumns: 'minmax(230px, 1.2fr) 150px minmax(170px, 1fr) 110px 170px',
+        gap: '14px',
+        alignItems: 'center',
+        textAlign: 'left',
+      }}
+    >
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{
+          width: '42px',
+          height: '42px',
+          borderRadius: '8px',
+          background: '#ecfeff',
+          color: '#0f766e',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <Building2 size={21} />
+        </div>
+        <div>
+          <div style={{ fontWeight: '800', color: '#0f172a', fontSize: '14px' }}>{resource.name}</div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '3px' }}>{resource.building || 'Campus facility'}</div>
+        </div>
+      </div>
+      <Info icon={MapPin} text={resource.location} />
+      <Info icon={Clock} text={`${resource.availabilityStart} to ${resource.availabilityEnd}`} />
+      <Info icon={Users} text={resource.capacity ? `${resource.capacity}` : 'N/A'} />
+      <StatusBadge status={resource.status} />
+    </button>
+  );
+}
+
+function Info({ icon: Icon, text }) {
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#475569', fontSize: '13px' }}>
+      <Icon size={15} color="#64748b" />
+      {text}
+    </span>
+  );
+}
+
+function LoadingGrid() {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '18px' }}>
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} style={{
+          height: '326px',
+          borderRadius: '8px',
+          border: '1px solid #e2e8f0',
+          background: 'linear-gradient(90deg, #f8fafc 25%, #eef2f7 50%, #f8fafc 75%)',
+          backgroundSize: '200% 100%',
+        }} />
+      ))}
+    </div>
+  );
+}
+
+function EmptyState({ hasActiveFilters, onClear }) {
+  return (
+    <div style={{
+      textAlign: 'center',
+      padding: '72px 40px',
+      background: '#fff',
+      borderRadius: '8px',
+      border: '1px dashed #cbd5e1',
+    }}>
+      <Building2 size={46} color="#94a3b8" />
+      <h3 style={{ margin: '14px 0 8px', color: '#0f172a', fontSize: '18px' }}>
+        {hasActiveFilters ? 'No facilities match your filters' : 'No facilities have been added yet'}
+      </h3>
+      <p style={{ margin: '0 0 20px', color: '#64748b', fontSize: '14px' }}>
+        {hasActiveFilters
+          ? 'Adjust the filters to widen the catalogue view.'
+          : 'Facilities will appear here after an administrator adds them.'}
+      </p>
+      {hasActiveFilters && (
+        <button type="button" onClick={onClear} style={{
+          padding: '10px 16px',
+          borderRadius: '8px',
+          border: '1px solid #d7dde8',
+          background: '#fff',
+          cursor: 'pointer',
+          fontSize: '14px',
+          color: '#334155',
+          fontWeight: '800',
+        }}>
+          Clear filters
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Pagination({ page, totalPages, setPage }) {
+  const start = Math.max(0, Math.min(page - 2, totalPages - 5));
+  const pages = Array.from({ length: Math.min(totalPages, 5) }, (_, index) => start + index);
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '30px' }}>
+      <button type="button" onClick={() => setPage(0)} disabled={page === 0} style={pageButton(page === 0)}>First</button>
+      <button type="button" onClick={() => setPage((current) => current - 1)} disabled={page === 0} style={pageButton(page === 0)}>Prev</button>
+      {pages.map((pageNum) => (
+        <button
+          type="button"
+          key={pageNum}
+          onClick={() => setPage(pageNum)}
+          style={{
+            ...pageButton(false),
+            background: page === pageNum ? '#0f766e' : '#fff',
+            color: page === pageNum ? '#fff' : '#334155',
+            borderColor: page === pageNum ? '#0f766e' : '#d7dde8',
+          }}
+        >
+          {pageNum + 1}
+        </button>
+      ))}
+      <button type="button" onClick={() => setPage((current) => current + 1)} disabled={page >= totalPages - 1} style={pageButton(page >= totalPages - 1)}>Next</button>
+      <button type="button" onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1} style={pageButton(page >= totalPages - 1)}>Last</button>
+    </div>
+  );
+}
+
+function pageButton(disabled) {
   return {
-    padding: '8px 12px', borderRadius: '8px',
-    border: '1px solid #e5e7eb', background: '#fff',
+    padding: '8px 12px',
+    borderRadius: '8px',
+    border: '1px solid #d7dde8',
+    background: '#fff',
     cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.4 : 1, fontSize: '14px', color: '#374151',
+    opacity: disabled ? 0.45 : 1,
+    fontSize: '13px',
+    color: '#334155',
+    fontWeight: '800',
   };
 }

@@ -1,9 +1,5 @@
 package com.university.backend.service.impl;
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.QRCodeWriter;
 import com.university.backend.dto.ResourceAnalyticsDTO;
 import com.university.backend.dto.ResourceRequestDTO;
 import com.university.backend.dto.ResourceResponseDTO;
@@ -19,7 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -71,8 +66,9 @@ public class ResourceServiceImpl implements ResourceService {
         resource.setBuilding(req.getBuilding());
         resource.setAvailabilityStart(req.getAvailabilityStart());
         resource.setAvailabilityEnd(req.getAvailabilityEnd());
+        resource.setStatus(req.getStatus());
         resource.setDescription(req.getDescription());
-        if (req.getImageUrl() != null) resource.setImageUrl(req.getImageUrl());
+        resource.setImageUrl(req.getImageUrl());
         return toDTO(resourceRepository.save(resource));
     }
 
@@ -93,9 +89,7 @@ public class ResourceServiceImpl implements ResourceService {
     @Override
     public void deleteResource(Long id) {
         Resource resource = findById(id);
-        resource.setStatus(ResourceStatus.OUT_OF_SERVICE);
-        resource.setStatusReason("Removed from catalogue by admin");
-        resourceRepository.save(resource);
+        resourceRepository.delete(resource);
     }
 
     @Override
@@ -125,20 +119,7 @@ public class ResourceServiceImpl implements ResourceService {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public byte[] generateQrCode(Long id) throws Exception {
-        Resource resource = findById(id);
-        String content = "SmartCampus | " + resource.getName()
-                + " | " + resource.getLocation()
-                + " | Status: " + resource.getStatus();
-        QRCodeWriter writer = new QRCodeWriter();
-        BitMatrix matrix = writer.encode(content, BarcodeFormat.QR_CODE, 300, 300);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        MatrixToImageWriter.writeToStream(matrix, "PNG", out);
-        return out.toByteArray();
-    }
-
-    // ── helpers ──────────────────────────────────────────────────────────────
+    // Helpers
 
     private Resource findById(Long id) {
         return resourceRepository.findById(id)

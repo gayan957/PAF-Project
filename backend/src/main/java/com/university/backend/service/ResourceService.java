@@ -20,5 +20,4 @@ public interface ResourceService {
     void deleteResource(Long id);
     ResourceAnalyticsDTO getAnalytics();
     List<String> getAllTypes();
-    byte[] generateQrCode(Long id) throws Exception;
 }
