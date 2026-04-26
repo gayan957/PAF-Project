@@ -8,21 +8,25 @@ const typeMeta = {
   LECTURE_HALL: { label: 'Lecture Hall', icon: DoorOpen, color: '#7c3aed', bg: '#f3e8ff' },
   LAB:          { label: 'Laboratory',   icon: FlaskConical, color: '#0284c7', bg: '#e0f2fe' },
   MEETING_ROOM: { label: 'Meeting Room', icon: Building2,    color: '#0f766e', bg: '#ccfbf1' },
-  EQUIPMENT:    { label: 'Equipment',    icon: Package,       color: '#c2410c', bg: '#ffedd5' },
+  EQUIPMENT:    { label: 'Equipment',    icon: Package,      color: '#c2410c', bg: '#ffedd5' },
 };
 
-/**
- * Props:
- *   resource – resource object
- *   onBook   – optional callback(resource). When provided, "Book Now" calls onBook(resource)
- *              instead of navigating to /bookings?resourceId=X.
- *              Use this when you want to open a booking modal in-place.
- */
 export default function ResourceCard({ resource, onBook }) {
   const navigate = useNavigate();
   const meta     = typeMeta[resource.type] || typeMeta.EQUIPMENT;
   const TypeIcon = meta.icon;
   const primaryImage = getPrimaryResourceImage(resource);
+
+  // ✅ FIX: define missing logic
+  const isActive = resource.status === 'AVAILABLE';
+
+  const handleBook = () => {
+    if (onBook) {
+      onBook(resource);
+    } else {
+      navigate(`/bookings?resourceId=${resource.id}`);
+    }
+  };
 
   return (
     <div
@@ -47,6 +51,7 @@ export default function ResourceCard({ resource, onBook }) {
         e.currentTarget.style.borderColor = '#e2e8f0';
       }}
     >
+      {/* IMAGE / ICON */}
       {primaryImage ? (
         <img
           src={primaryImage}
@@ -62,49 +67,47 @@ export default function ResourceCard({ resource, onBook }) {
           justifyContent: 'center',
         }}>
           <div style={{
-            height: '138px',
-            background: `linear-gradient(135deg, ${meta.bg} 0%, #ffffff 100%)`,
+            width: '58px', height: '58px', borderRadius: '16px',
+            background: '#fff', color: meta.color,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)',
           }}>
-            <div style={{
-              width: '58px', height: '58px', borderRadius: '16px',
-              background: '#fff', color: meta.color,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)',
-            }}>
-              <TypeIcon size={30} />
-            </div>
+            <TypeIcon size={30} />
           </div>
-        )}
-      </button>
+        </div>
+      )}
 
+      {/* CONTENT */}
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
-        {/* Status + type badge */}
+
+        {/* Status + Type */}
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
           <StatusBadge status={resource.status} />
           <span style={{
             fontSize: '11px', color: meta.color, background: meta.bg,
-            padding: '4px 8px', borderRadius: '999px', fontWeight: '800', whiteSpace: 'nowrap',
+            padding: '4px 8px', borderRadius: '999px', fontWeight: '800'
           }}>
             {meta.label}
           </span>
         </div>
 
-        {/* Title → resource detail */}
+        {/* Title */}
         <button
           type="button"
           onClick={() => navigate(`/resources/${resource.id}`)}
           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
         >
-          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0f172a', lineHeight: 1.35 }}>
+          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>
             {resource.name}
           </h3>
           {resource.building && (
-            <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '13px' }}>{resource.building}</p>
+            <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '13px' }}>
+              {resource.building}
+            </p>
           )}
         </button>
 
-        {/* Key facts */}
+        {/* Facts */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', marginTop: 'auto' }}>
           <Fact icon={MapPin} text={resource.location} />
           {resource.capacity && <Fact icon={Users} text={`${resource.capacity} capacity`} />}
@@ -113,16 +116,14 @@ export default function ResourceCard({ resource, onBook }) {
           )}
         </div>
 
-        {/* Action buttons */}
+        {/* Buttons */}
         <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
           <button
-            type="button"
             onClick={() => navigate(`/resources/${resource.id}`)}
             style={{
-              flex: 1, padding: '8px 10px',
+              flex: 1, padding: '8px',
               borderRadius: '8px', border: '1px solid #e2e8f0',
-              background: '#f8fafc', cursor: 'pointer',
-              fontSize: '13px', color: '#334155', fontWeight: '700',
+              background: '#f8fafc'
             }}
           >
             Details
@@ -130,28 +131,23 @@ export default function ResourceCard({ resource, onBook }) {
 
           {isActive ? (
             <button
-              type="button"
               onClick={handleBook}
               style={{
-                flex: 1, padding: '8px 10px',
-                borderRadius: '8px', border: 'none',
-                background: '#10b981', cursor: 'pointer',
-                fontSize: '13px', color: '#fff', fontWeight: '700',
-                transition: 'background 0.15s',
+                flex: 1, padding: '8px',
+                borderRadius: '8px',
+                background: '#10b981',
+                color: '#fff'
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#059669')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#10b981')}
             >
               Book Now
             </button>
           ) : (
             <span style={{
-              flex: 1, padding: '8px 10px',
-              borderRadius: '8px', border: '1px solid #fecaca',
-              background: '#fef2f2', fontSize: '13px',
-              color: '#dc2626', fontWeight: '700',
-              textAlign: 'center',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flex: 1, padding: '8px',
+              borderRadius: '8px',
+              background: '#fef2f2',
+              color: '#dc2626',
+              textAlign: 'center'
             }}>
               Unavailable
             </span>
@@ -165,7 +161,7 @@ export default function ResourceCard({ resource, onBook }) {
 function Fact({ icon: Icon, text }) {
   return (
     <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#475569', fontSize: '13px' }}>
-      <Icon size={15} color="#64748b" />
+      <Icon size={15} />
       {text}
     </span>
   );
