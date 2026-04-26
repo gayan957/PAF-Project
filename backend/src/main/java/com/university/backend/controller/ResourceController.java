@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +27,7 @@ public class ResourceController {
 
     private final ResourceService resourceService;
 
-    /** GET /api/v1/resources — browse with filters */
+    /** GET /api/v1/resources - browse with filters */
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ResourceResponseDTO>>> getAll(
             @RequestParam(required = false) ResourceType type,
@@ -44,34 +43,26 @@ public class ResourceController {
                         type, status, location, building, minCapacity, keyword, pageable)));
     }
 
-    /** GET /api/v1/resources/types — enum dropdown values */
+    /** GET /api/v1/resources/types - enum dropdown values */
     @GetMapping("/types")
     public ResponseEntity<ApiResponse<List<String>>> getTypes() {
         return ResponseEntity.ok(ApiResponse.success(resourceService.getAllTypes()));
     }
 
-    /** GET /api/v1/resources/analytics — admin dashboard stats */
+    /** GET /api/v1/resources/analytics - admin dashboard stats */
     @GetMapping("/analytics")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ResourceAnalyticsDTO>> getAnalytics() {
         return ResponseEntity.ok(ApiResponse.success(resourceService.getAnalytics()));
     }
 
-    /** GET /api/v1/resources/{id} — single resource detail */
+    /** GET /api/v1/resources/{id} - single resource detail */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ResourceResponseDTO>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(resourceService.getResourceById(id)));
     }
 
-    /** GET /api/v1/resources/{id}/qr — QR code PNG image */
-    @GetMapping("/{id}/qr")
-    public ResponseEntity<byte[]> getQr(@PathVariable Long id) throws Exception {
-        return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_PNG)
-                .body(resourceService.generateQrCode(id));
-    }
-
-    /** POST /api/v1/resources — create new resource (ADMIN only) */
+    /** POST /api/v1/resources - create new resource (ADMIN only) */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ResourceResponseDTO>> create(
@@ -85,7 +76,7 @@ public class ResourceController {
                 .body(ApiResponse.success("Resource created successfully", created));
     }
 
-    /** PUT /api/v1/resources/{id} — full update (ADMIN only) */
+    /** PUT /api/v1/resources/{id} - full update (ADMIN only) */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ResourceResponseDTO>> update(
@@ -97,7 +88,7 @@ public class ResourceController {
                 resourceService.updateResource(id, request)));
     }
 
-    /** PATCH /api/v1/resources/{id}/status — status change only (ADMIN only) */
+    /** PATCH /api/v1/resources/{id}/status - status change only (ADMIN only) */
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ResourceResponseDTO>> updateStatus(
@@ -112,7 +103,7 @@ public class ResourceController {
                 resourceService.updateStatus(id, status, reason, changedBy)));
     }
 
-    /** DELETE /api/v1/resources/{id} — soft delete (ADMIN only) */
+    /** DELETE /api/v1/resources/{id} - delete resource (ADMIN only) */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {

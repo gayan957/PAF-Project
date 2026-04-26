@@ -1,27 +1,57 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Activity,
+  BarChart3,
+  Building2,
+  CheckCircle2,
+  Edit3,
+  Eye,
+  Plus,
+  Search,
+  Trash2,
+  Wrench,
+  X,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
-  getResources, createResource, updateResource,
-  deleteResource, getAnalytics
+  createResource,
+  deleteResource,
+  getAnalytics,
+  getResources,
+  updateResource,
 } from '../api/resourceApi';
 import ResourceForm from '../components/resources/ResourceForm';
 import StatusBadge from '../components/resources/StatusBadge';
 import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
 
 const TYPE_COLORS = {
-  LAB: '#6366f1',
-  LECTURE_HALL: '#f59e0b',
-  MEETING_ROOM: '#10b981',
-  EQUIPMENT: '#ef4444',
+  LAB: '#0284c7',
+  LECTURE_HALL: '#7c3aed',
+  MEETING_ROOM: '#0f766e',
+  EQUIPMENT: '#c2410c',
 };
 
 const STATUS_COLORS = {
   Active: '#16a34a',
   'Under Maintenance': '#d97706',
   'Out of Service': '#dc2626',
+};
+
+const STATUS_LABELS = {
+  ACTIVE: 'Active',
+  UNDER_MAINTENANCE: 'Under Maintenance',
+  OUT_OF_SERVICE: 'Out of Service',
 };
 
 export default function AdminResourcesPage() {
@@ -31,33 +61,43 @@ export default function AdminResourcesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState('resources');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [activeTab, setActiveTab] = useState('inventory');
 
   const fetchAll = async () => {
+    setPageLoading(true);
     try {
-      const [rRes, aRes] = await Promise.all([
-        getResources({ size: 100 }),
+      const [resourceResponse, analyticsResponse] = await Promise.all([
+        getResources({ size: 100, sort: 'name' }),
         getAnalytics(),
       ]);
-      setResources(rRes.data.data.content);
-      setAnalytics(aRes.data.data);
-    } catch (err) {
-      console.error(err);
+      setResources(resourceResponse.data.data.content || []);
+      setAnalytics(analyticsResponse.data.data);
+    } catch (error) {
+      console.error('Failed to load facilities', error);
+      window.alert('Could not load facilities: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setPageLoading(false);
     }
   };
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
   const handleCreate = async (data) => {
     setLoading(true);
     try {
       await createResource(data);
       setShowForm(false);
-      fetchAll();
-    } catch (err) {
-      alert('Error: ' + (err.response?.data?.message || err.message));
-    } finally { setLoading(false); }
+      await fetchAll();
+    } catch (error) {
+      window.alert('Error: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = async (data) => {
@@ -65,179 +105,172 @@ export default function AdminResourcesPage() {
     try {
       await updateResource(editTarget.id, data);
       setEditTarget(null);
-      fetchAll();
-    } catch (err) {
-      alert('Error: ' + (err.response?.data?.message || err.message));
-    } finally { setLoading(false); }
+      await fetchAll();
+    } catch (error) {
+      window.alert('Error: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Remove this resource?')) return;
-    await deleteResource(id);
-    fetchAll();
+  const handleDelete = async (resource) => {
+    if (!window.confirm(`Remove "${resource.name}" from Facilities Management?`)) return;
+    try {
+      await deleteResource(resource.id);
+      await fetchAll();
+    } catch (error) {
+      window.alert('Delete failed: ' + (error.response?.data?.message || error.message));
+    }
   };
 
-  const filteredResources = resources.filter(r =>
-    r.name?.toLowerCase().includes(search.toLowerCase()) ||
-    r.location?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredResources = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return resources.filter((resource) => {
+      const matchesSearch = !query
+        || resource.name?.toLowerCase().includes(query)
+        || resource.location?.toLowerCase().includes(query)
+        || resource.building?.toLowerCase().includes(query)
+        || resource.type?.toLowerCase().includes(query);
+      const matchesStatus = !statusFilter || resource.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [resources, search, statusFilter]);
 
-  // Chart data
   const typeChartData = analytics?.countByType
     ? Object.entries(analytics.countByType).map(([name, value]) => ({
-        name: name.replace(/_/g, ' '), value,
+        name: formatEnum(name),
+        value: Number(value),
+        rawName: name,
       }))
     : [];
 
-  const statusChartData = analytics ? [
-    { name: 'Active', value: Number(analytics.activeCount) },
-    { name: 'Under Maintenance', value: Number(analytics.underMaintenanceCount) },
-    { name: 'Out of Service', value: Number(analytics.outOfServiceCount) },
-  ].filter(d => d.value > 0) : [];
-
-  const buildingChartData = analytics?.countByBuilding
-    ? Object.entries(analytics.countByBuilding).map(([name, value]) => ({ name, value: Number(value) }))
+  const statusChartData = analytics
+    ? [
+        { name: 'Active', value: Number(analytics.activeCount) },
+        { name: 'Under Maintenance', value: Number(analytics.underMaintenanceCount) },
+        { name: 'Out of Service', value: Number(analytics.outOfServiceCount) },
+      ].filter((item) => item.value > 0)
     : [];
 
+  const buildingChartData = analytics?.countByBuilding
+    ? Object.entries(analytics.countByBuilding)
+        .map(([name, value]) => ({ name, value: Number(value) }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 8)
+    : [];
+
+  const operationalScore = analytics?.totalResources
+    ? Math.round((Number(analytics.activeCount) / Number(analytics.totalResources)) * 100)
+    : 0;
+
+  const attentionList = resources
+    .filter((resource) => resource.status !== 'ACTIVE')
+    .slice(0, 4);
+
   return (
-    <div style={{ padding: '24px', maxWidth: '1300px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+    <div style={{ padding: '24px', maxWidth: '1340px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#111' }}>
+          <p style={eyebrow}>Module A - Member 1</p>
+          <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '850', color: '#0f172a', letterSpacing: '0' }}>
             Facilities Management
           </h1>
-          <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: '14px' }}>
-            Manage campus resources and facilities
+          <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: '14px' }}>
+            Manage campus facilities, equipment records, operational status, and asset visibility.
           </p>
         </div>
-        <button onClick={() => setShowForm(true)} style={{
-          padding: '10px 20px', borderRadius: '10px', border: 'none',
-          background: '#2563eb', color: '#fff', fontWeight: '600',
-          cursor: 'pointer', fontSize: '14px', display: 'flex',
-          alignItems: 'center', gap: '6px',
-          boxShadow: '0 2px 8px rgba(37,99,235,0.3)',
-        }}>
-          + Add Resource
+
+        <button type="button" onClick={() => setShowForm(true)} style={primaryButton}>
+          <Plus size={18} />
+          Add Facility
         </button>
       </div>
 
-      {/* Stats row */}
       {analytics && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-          {[
-            { label: 'Total Resources', value: analytics.totalResources, color: '#2563eb', bg: '#eff6ff', icon: '🏛️' },
-            { label: 'Active', value: analytics.activeCount, color: '#16a34a', bg: '#f0fdf4', icon: '✅' },
-            { label: 'Under Maintenance', value: analytics.underMaintenanceCount, color: '#d97706', bg: '#fffbeb', icon: '🔧' },
-            { label: 'Out of Service', value: analytics.outOfServiceCount, color: '#dc2626', bg: '#fef2f2', icon: '❌' },
-          ].map(({ label, value, color, bg, icon }) => (
-            <div key={label} style={{
-              background: bg, border: `1px solid ${color}20`,
-              borderRadius: '12px', padding: '18px',
-              display: 'flex', alignItems: 'center', gap: '14px',
-            }}>
-              <div style={{
-                width: '44px', height: '44px', borderRadius: '10px',
-                background: '#fff', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: '20px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-              }}>
-                {icon}
-              </div>
-              <div>
-                <div style={{ fontSize: '26px', fontWeight: '700', color, lineHeight: 1 }}>{value}</div>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '3px' }}>{label}</div>
-              </div>
-            </div>
-          ))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '14px', marginBottom: '22px' }}>
+          <Metric title="Total Facilities" value={analytics.totalResources} color="#0284c7" icon={Building2} />
+          <Metric title="Active" value={analytics.activeCount} color="#16a34a" icon={CheckCircle2} />
+          <Metric title="Maintenance" value={analytics.underMaintenanceCount} color="#d97706" icon={Wrench} />
+          <Metric title="Out of Service" value={analytics.outOfServiceCount} color="#dc2626" icon={X} />
+          <Metric title="Health Score" value={`${operationalScore}%`} color="#0f766e" icon={Activity} />
         </div>
       )}
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', background: '#f3f4f6', borderRadius: '10px', padding: '4px', width: 'fit-content' }}>
-        {['resources', 'analytics'].map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} style={{
-            padding: '8px 20px', borderRadius: '8px', border: 'none',
-            background: activeTab === tab ? '#fff' : 'transparent',
-            color: activeTab === tab ? '#111' : '#6b7280',
-            fontWeight: activeTab === tab ? '600' : '400',
-            cursor: 'pointer', fontSize: '14px',
-            boxShadow: activeTab === tab ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-            textTransform: 'capitalize',
-          }}>
-            {tab === 'resources' ? '📋 Resources' : '📊 Analytics'}
-          </button>
-        ))}
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '18px', background: '#f1f5f9', borderRadius: '8px', padding: '4px', width: 'fit-content', border: '1px solid #e2e8f0' }}>
+        <TabButton active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={Building2}>
+          Inventory
+        </TabButton>
+        <TabButton active={activeTab === 'analytics'} onClick={() => setActiveTab('analytics')} icon={BarChart3}>
+          Analytics
+        </TabButton>
       </div>
 
-      {/* Resources tab */}
-      {activeTab === 'resources' && (
+      {activeTab === 'inventory' && (
         <>
-          {/* Search */}
-          <div style={{ marginBottom: '16px' }}>
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="🔍 Search by name or location..."
-              style={{
-                width: '300px', padding: '10px 14px',
-                border: '1px solid #e5e7eb', borderRadius: '10px',
-                fontSize: '14px', outline: 'none', boxSizing: 'border-box',
-              }}
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 220px', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ position: 'relative' }}>
+              <Search size={17} style={{ position: 'absolute', left: '13px', top: '12px', color: '#64748b' }} />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by facility, building, location, or type"
+                style={{ ...inputStyle, paddingLeft: '40px' }}
+              />
+            </div>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} style={inputStyle}>
+              <option value="">All statuses</option>
+              <option value="ACTIVE">Active</option>
+              <option value="UNDER_MAINTENANCE">Under Maintenance</option>
+              <option value="OUT_OF_SERVICE">Out of Service</option>
+            </select>
           </div>
 
-          {/* Table */}
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
-                  {['Resource', 'Type', 'Location', 'Capacity', 'Hours', 'Status', 'Actions'].map(h => (
-                    <th key={h} style={{
-                      padding: '12px 16px', textAlign: 'left',
-                      fontWeight: '600', color: '#374151', fontSize: '13px',
-                    }}>{h}</th>
+                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                  {['Facility', 'Type', 'Location', 'Capacity', 'Hours', 'Status', 'Actions'].map((heading) => (
+                    <th key={heading} style={tableHeader}>{heading}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {filteredResources.length === 0 ? (
+                {pageLoading ? (
                   <tr>
-                    <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
-                      <div style={{ fontSize: '32px', marginBottom: '8px' }}>📭</div>
-                      No resources found
-                    </td>
+                    <td colSpan={7} style={emptyCell}>Loading facilities...</td>
                   </tr>
-                ) : filteredResources.map(r => (
-                  <tr key={r.id}
-                    style={{ borderBottom: '1px solid #f0f0f0', transition: 'background 0.1s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#fafafa'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                    <td style={{ padding: '14px 16px' }}>
-                      <div style={{ fontWeight: '600', color: '#111' }}>{r.name}</div>
-                      {r.building && <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>{r.building}</div>}
+                ) : filteredResources.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={emptyCell}>No facilities found.</td>
+                  </tr>
+                ) : filteredResources.map((resource) => (
+                  <tr key={resource.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={tableCell}>
+                      <div style={{ fontWeight: '800', color: '#0f172a' }}>{resource.name}</div>
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '3px' }}>{resource.building || 'No building assigned'}</div>
                     </td>
-                    <td style={{ padding: '14px 16px' }}>
+                    <td style={tableCell}>
                       <span style={{
-                        fontSize: '12px', padding: '3px 8px', borderRadius: '6px',
-                        background: `${TYPE_COLORS[r.type] || '#6b7280'}15`,
-                        color: TYPE_COLORS[r.type] || '#6b7280',
-                        fontWeight: '500',
+                        fontSize: '12px',
+                        padding: '5px 9px',
+                        borderRadius: '999px',
+                        background: `${TYPE_COLORS[resource.type] || '#64748b'}14`,
+                        color: TYPE_COLORS[resource.type] || '#64748b',
+                        fontWeight: '800',
+                        whiteSpace: 'nowrap',
                       }}>
-                        {r.type?.replace(/_/g, ' ')}
+                        {formatEnum(resource.type)}
                       </span>
                     </td>
-                    <td style={{ padding: '14px 16px', color: '#6b7280', fontSize: '13px' }}>{r.location}</td>
-                    <td style={{ padding: '14px 16px', color: '#6b7280' }}>{r.capacity ? `${r.capacity} 👥` : '—'}</td>
-                    <td style={{ padding: '14px 16px', color: '#6b7280', fontSize: '13px' }}>
-                      {r.availabilityStart} – {r.availabilityEnd}
-                    </td>
-                    <td style={{ padding: '14px 16px' }}><StatusBadge status={r.status} /></td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <ActionBtn onClick={() => navigate(`/resources/${r.id}`)} color="#6b7280">View</ActionBtn>
-                        <ActionBtn onClick={() => setEditTarget(r)} color="#2563eb">Edit</ActionBtn>
-                        <ActionBtn onClick={() => handleDelete(r.id)} color="#dc2626">Remove</ActionBtn>
+                    <td style={{ ...tableCell, color: '#475569' }}>{resource.location}</td>
+                    <td style={{ ...tableCell, color: '#475569' }}>{resource.capacity || 'N/A'}</td>
+                    <td style={{ ...tableCell, color: '#475569' }}>{resource.availabilityStart} to {resource.availabilityEnd}</td>
+                    <td style={tableCell}><StatusBadge status={resource.status} /></td>
+                    <td style={tableCell}>
+                      <div style={{ display: 'flex', gap: '7px' }}>
+                        <IconButton title="View" color="#475569" onClick={() => navigate(`/resources/${resource.id}`)} icon={Eye} />
+                        <IconButton title="Edit" color="#0f766e" onClick={() => setEditTarget(resource)} icon={Edit3} />
+                        <IconButton title="Remove" color="#dc2626" onClick={() => handleDelete(resource)} icon={Trash2} />
                       </div>
                     </td>
                   </tr>
@@ -248,123 +281,173 @@ export default function AdminResourcesPage() {
         </>
       )}
 
-      {/* Analytics tab */}
       {activeTab === 'analytics' && analytics && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          {/* Resources by type - Pie chart */}
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px' }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600' }}>Resources by Type</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px' }}>
+          <ChartPanel title="Facilities by Type">
             {typeChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={260}>
+              <ResponsiveContainer width="100%" height={270}>
                 <PieChart>
-                  <Pie data={typeChartData} cx="50%" cy="50%" outerRadius={90}
-                    dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={false}>
+                  <Pie data={typeChartData} cx="50%" cy="50%" outerRadius={92} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
                     {typeChartData.map((entry, index) => (
-                      <Cell key={index} fill={Object.values(TYPE_COLORS)[index % 4]} />
+                      <Cell key={entry.rawName} fill={TYPE_COLORS[entry.rawName] || Object.values(TYPE_COLORS)[index % 4]} />
                     ))}
                   </Pie>
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
-            ) : <p style={{ color: '#9ca3af', textAlign: 'center', padding: '40px 0' }}>No data yet</p>}
-          </div>
+            ) : <EmptyChart />}
+          </ChartPanel>
 
-          {/* Status breakdown - Pie chart */}
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px' }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600' }}>Status Breakdown</h3>
+          <ChartPanel title="Operational Status">
             {statusChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={260}>
+              <ResponsiveContainer width="100%" height={270}>
                 <PieChart>
-                  <Pie data={statusChartData} cx="50%" cy="50%" innerRadius={50} outerRadius={90}
-                    dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                    {statusChartData.map((entry, index) => (
-                      <Cell key={index} fill={STATUS_COLORS[entry.name] || '#6b7280'} />
+                  <Pie data={statusChartData} cx="50%" cy="50%" innerRadius={54} outerRadius={92} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+                    {statusChartData.map((entry) => (
+                      <Cell key={entry.name} fill={STATUS_COLORS[entry.name]} />
                     ))}
                   </Pie>
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
-            ) : <p style={{ color: '#9ca3af', textAlign: 'center', padding: '40px 0' }}>No data yet</p>}
-          </div>
+            ) : <EmptyChart />}
+          </ChartPanel>
 
-          {/* Resources by building - Bar chart */}
-          {buildingChartData.length > 0 && (
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px', gridColumn: '1 / -1' }}>
-              <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600' }}>Resources by Building</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={buildingChartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <ChartPanel title="Top Buildings by Facility Count" wide>
+            {buildingChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={buildingChartData} margin={{ top: 8, right: 20, left: 0, bottom: 6 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="#6366f1" radius={[6, 6, 0, 0]} name="Resources" />
+                  <Bar dataKey="value" fill="#0f766e" radius={[6, 6, 0, 0]} name="Facilities" />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-          )}
+            ) : <EmptyChart />}
+          </ChartPanel>
 
-          {/* Summary table */}
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px', gridColumn: '1 / -1' }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600' }}>Type Summary</h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-              <thead>
-                <tr style={{ background: '#f8fafc' }}>
-                  {['Resource Type', 'Count', 'Percentage', 'Status'].map(h => (
-                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {typeChartData.map((row, i) => (
-                  <tr key={i} style={{ borderTop: '1px solid #f0f0f0' }}>
-                    <td style={{ padding: '12px 16px', fontWeight: '500' }}>
-                      <span style={{
-                        display: 'inline-block', width: '10px', height: '10px',
-                        borderRadius: '50%', background: Object.values(TYPE_COLORS)[i % 4],
-                        marginRight: '8px',
-                      }} />
-                      {row.name}
-                    </td>
-                    <td style={{ padding: '12px 16px', color: '#374151' }}>{row.value}</td>
-                    <td style={{ padding: '12px 16px', color: '#6b7280' }}>
-                      {analytics.totalResources > 0
-                        ? `${((row.value / Number(analytics.totalResources)) * 100).toFixed(1)}%`
-                        : '0%'}
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ width: '100px', background: '#f0f0f0', borderRadius: '4px', height: '6px' }}>
-                        <div style={{
-                          width: analytics.totalResources > 0
-                            ? `${(row.value / Number(analytics.totalResources)) * 100}%`
-                            : '0%',
-                          background: Object.values(TYPE_COLORS)[i % 4],
-                          borderRadius: '4px', height: '100%',
-                        }} />
+          <ChartPanel title="Facilities Requiring Attention" wide>
+            {attentionList.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px' }}>
+                {attentionList.map((resource) => (
+                  <div key={resource.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'flex-start' }}>
+                      <div>
+                        <div style={{ fontWeight: '800', color: '#0f172a' }}>{resource.name}</div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '3px' }}>{resource.location}</div>
                       </div>
-                    </td>
-                  </tr>
+                      <StatusBadge status={resource.status} />
+                    </div>
+                    <p style={{ margin: '10px 0 0', color: '#64748b', fontSize: '13px' }}>
+                      {resource.statusReason || `Marked as ${STATUS_LABELS[resource.status]}. Review operational readiness.`}
+                    </p>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            ) : (
+              <div style={{ padding: '28px', textAlign: 'center', color: '#16a34a', fontWeight: '800' }}>
+                All facilities are currently active.
+              </div>
+            )}
+          </ChartPanel>
         </div>
       )}
 
-      {/* Create modal */}
       {showForm && (
-        <Modal title="Add New Resource" onClose={() => setShowForm(false)}>
+        <Modal title="Add Facility" onClose={() => setShowForm(false)}>
           <ResourceForm loading={loading} onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
         </Modal>
       )}
 
-      {/* Edit modal */}
       {editTarget && (
-        <Modal title="Edit Resource" onClose={() => setEditTarget(null)}>
-          <ResourceForm initial={editTarget} loading={loading}
-            onSubmit={handleEdit} onCancel={() => setEditTarget(null)} />
+        <Modal title={`Edit ${editTarget.name}`} onClose={() => setEditTarget(null)}>
+          <ResourceForm
+            initial={editTarget}
+            loading={loading}
+            onSubmit={handleEdit}
+            onCancel={() => setEditTarget(null)}
+          />
         </Modal>
       )}
+    </div>
+  );
+}
+
+function Metric({ title, value, color, icon: Icon }) {
+  return (
+    <div style={{
+      background: '#fff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      padding: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      minHeight: '76px',
+    }}>
+      <div style={{
+        width: '42px',
+        height: '42px',
+        borderRadius: '8px',
+        background: `${color}14`,
+        color,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        <Icon size={22} />
+      </div>
+      <div>
+        <div style={{ fontSize: '22px', fontWeight: '850', color: '#0f172a', lineHeight: 1 }}>{value}</div>
+        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '5px', fontWeight: '700' }}>{title}</div>
+      </div>
+    </div>
+  );
+}
+
+function TabButton({ active, onClick, icon: Icon, children }) {
+  return (
+    <button type="button" onClick={onClick} style={{
+      padding: '8px 16px',
+      borderRadius: '7px',
+      border: 'none',
+      background: active ? '#fff' : 'transparent',
+      color: active ? '#0f172a' : '#64748b',
+      fontWeight: '800',
+      cursor: 'pointer',
+      fontSize: '14px',
+      boxShadow: active ? '0 1px 4px rgba(15, 23, 42, 0.12)' : 'none',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+    }}>
+      <Icon size={16} />
+      {children}
+    </button>
+  );
+}
+
+function ChartPanel({ title, children, wide }) {
+  return (
+    <div style={{
+      background: '#fff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      padding: '18px',
+      gridColumn: wide ? '1 / -1' : 'auto',
+    }}>
+      <h3 style={{ margin: '0 0 14px', fontSize: '15px', fontWeight: '850', color: '#0f172a' }}>{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+function EmptyChart() {
+  return (
+    <div style={{ height: '210px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontWeight: '700' }}>
+      No data yet
     </div>
   );
 }
@@ -372,23 +455,41 @@ export default function AdminResourcesPage() {
 function Modal({ title, onClose, children }) {
   return (
     <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-      zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(15, 23, 42, 0.54)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px',
       backdropFilter: 'blur(2px)',
     }}>
       <div style={{
-        background: '#fff', borderRadius: '16px', padding: '28px',
-        width: '620px', maxHeight: '90vh', overflowY: 'auto',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+        background: '#fff',
+        borderRadius: '10px',
+        padding: '24px',
+        width: '640px',
+        maxHeight: '90vh',
+        overflowY: 'auto',
+        boxShadow: '0 24px 70px rgba(15, 23, 42, 0.24)',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>{title}</h2>
-          <button onClick={onClose} style={{
-            background: '#f3f4f6', border: 'none', borderRadius: '8px',
-            width: '32px', height: '32px', cursor: 'pointer',
-            fontSize: '16px', color: '#6b7280', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-          }}>×</button>
+          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '850', color: '#0f172a' }}>{title}</h2>
+          <button type="button" onClick={onClose} title="Close" style={{
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            width: '34px',
+            height: '34px',
+            cursor: 'pointer',
+            color: '#475569',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <X size={18} />
+          </button>
         </div>
         {children}
       </div>
@@ -396,19 +497,82 @@ function Modal({ title, onClose, children }) {
   );
 }
 
-function ActionBtn({ onClick, color, children }) {
+function IconButton({ title, color, onClick, icon: Icon }) {
   return (
-    <button onClick={onClick} style={{
-      padding: '5px 10px', borderRadius: '6px',
-      border: `1px solid ${color}30`, color: color,
-      background: `${color}08`, cursor: 'pointer',
-      fontSize: '12px', fontWeight: '500',
-      transition: 'background 0.1s',
-    }}
-      onMouseEnter={e => e.currentTarget.style.background = `${color}15`}
-      onMouseLeave={e => e.currentTarget.style.background = `${color}08`}
-    >
-      {children}
+    <button type="button" title={title} onClick={onClick} style={{
+      width: '34px',
+      height: '32px',
+      borderRadius: '8px',
+      border: `1px solid ${color}24`,
+      color,
+      background: `${color}0d`,
+      cursor: 'pointer',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <Icon size={16} />
     </button>
   );
 }
+
+function formatEnum(value) {
+  return value?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()) || 'N/A';
+}
+
+const eyebrow = {
+  margin: '0 0 6px',
+  color: '#0f766e',
+  fontSize: '12px',
+  fontWeight: '850',
+  textTransform: 'uppercase',
+  letterSpacing: '0',
+};
+
+const primaryButton = {
+  padding: '10px 16px',
+  borderRadius: '8px',
+  border: 'none',
+  background: '#0f766e',
+  color: '#fff',
+  fontWeight: '850',
+  cursor: 'pointer',
+  fontSize: '14px',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '8px',
+  boxShadow: '0 8px 18px rgba(15, 118, 110, 0.22)',
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  border: '1px solid #d7dde8',
+  borderRadius: '8px',
+  fontSize: '14px',
+  outline: 'none',
+  boxSizing: 'border-box',
+  background: '#fff',
+};
+
+const tableHeader = {
+  padding: '12px 16px',
+  textAlign: 'left',
+  fontWeight: '850',
+  color: '#334155',
+  fontSize: '12px',
+  textTransform: 'uppercase',
+  letterSpacing: '0',
+};
+
+const tableCell = {
+  padding: '14px 16px',
+  verticalAlign: 'middle',
+};
+
+const emptyCell = {
+  padding: '42px',
+  textAlign: 'center',
+  color: '#94a3b8',
+  fontWeight: '700',
+};

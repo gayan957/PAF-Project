@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, Calendar, CreditCard, Award, HelpCircle, LogOut, Users, Ticket as TicketIcon, User } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Calendar, CreditCard, Award, HelpCircle, LogOut, Users, Ticket as TicketIcon, User, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
@@ -36,6 +36,10 @@ const Sidebar = () => {
                             <TicketIcon size={20} />
                             <span>Ticket Management</span>
                         </NavLink>
+                        <NavLink to="/admin/resources" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <Building2 size={20} />
+                            <span>Facilities Management</span>
+                        </NavLink>
                         <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                             <User size={20} />
                             <span>Profile</span>
@@ -65,6 +69,10 @@ const Sidebar = () => {
                         <NavLink to="/courses" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                             <BookOpen size={20} />
                             <span>Courses</span>
+                        </NavLink>
+                        <NavLink to="/resources" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                            <Building2 size={20} />
+                            <span>Resources</span>
                         </NavLink>
                         <NavLink to="/tickets" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                             <Calendar size={20} />
