@@ -1,6 +1,7 @@
 package com.university.backend.service.impl;
 
 import com.university.backend.dto.ResourceAnalyticsDTO;
+import com.university.backend.dto.ResourceAvailabilityWindowDTO;
 import com.university.backend.dto.ResourceRequestDTO;
 import com.university.backend.dto.ResourceResponseDTO;
 import com.university.backend.exception.InvalidStatusTransitionException;
@@ -31,6 +32,8 @@ import java.util.stream.Collectors;
 public class ResourceServiceImpl implements ResourceService {
 
     private static final String IMAGE_SEPARATOR = "\n";
+    private static final String WINDOW_SEPARATOR = "\n";
+    private static final String WINDOW_PART_SEPARATOR = "|";
     private static final int MAX_RESOURCE_IMAGES = 5;
 
     private final ResourceRepository resourceRepository;
@@ -54,14 +57,16 @@ public class ResourceServiceImpl implements ResourceService {
     @Override
     public ResourceResponseDTO createResource(ResourceRequestDTO req, String createdBy) {
         List<String> imageUrls = normalizeImageUrls(req.getImageUrls(), req.getImageUrl());
+        List<ResourceAvailabilityWindowDTO> windows = normalizeAvailabilityWindows(req);
         Resource resource = Resource.builder()
                 .name(req.getName())
                 .type(req.getType())
                 .capacity(req.getCapacity())
                 .location(req.getLocation())
                 .building(req.getBuilding())
-                .availabilityStart(req.getAvailabilityStart())
-                .availabilityEnd(req.getAvailabilityEnd())
+                .availabilityStart(primaryOpeningTime(windows))
+                .availabilityEnd(primaryClosingTime(windows))
+                .availabilityWindows(serializeAvailabilityWindows(windows))
                 .status(req.getStatus() != null ? req.getStatus() : ResourceStatus.ACTIVE)
                 .description(req.getDescription())
                 .imageUrl(primaryImageUrl(imageUrls))
@@ -77,6 +82,7 @@ public class ResourceServiceImpl implements ResourceService {
         List<String> imageUrls = normalizeImageUrls(req.getImageUrls(), req.getImageUrl());
         imageUrls.addAll(storeImages(images, MAX_RESOURCE_IMAGES - imageUrls.size()));
         validateImageCount(imageUrls);
+        List<ResourceAvailabilityWindowDTO> windows = normalizeAvailabilityWindows(req);
 
         Resource resource = Resource.builder()
                 .name(req.getName())
@@ -84,8 +90,9 @@ public class ResourceServiceImpl implements ResourceService {
                 .capacity(req.getCapacity())
                 .location(req.getLocation())
                 .building(req.getBuilding())
-                .availabilityStart(req.getAvailabilityStart())
-                .availabilityEnd(req.getAvailabilityEnd())
+                .availabilityStart(primaryOpeningTime(windows))
+                .availabilityEnd(primaryClosingTime(windows))
+                .availabilityWindows(serializeAvailabilityWindows(windows))
                 .status(req.getStatus() != null ? req.getStatus() : ResourceStatus.ACTIVE)
                 .description(req.getDescription())
                 .imageUrl(primaryImageUrl(imageUrls))
@@ -103,8 +110,10 @@ public class ResourceServiceImpl implements ResourceService {
         resource.setCapacity(req.getCapacity());
         resource.setLocation(req.getLocation());
         resource.setBuilding(req.getBuilding());
-        resource.setAvailabilityStart(req.getAvailabilityStart());
-        resource.setAvailabilityEnd(req.getAvailabilityEnd());
+        List<ResourceAvailabilityWindowDTO> windows = normalizeAvailabilityWindows(req);
+        resource.setAvailabilityStart(primaryOpeningTime(windows));
+        resource.setAvailabilityEnd(primaryClosingTime(windows));
+        resource.setAvailabilityWindows(serializeAvailabilityWindows(windows));
         resource.setStatus(req.getStatus());
         resource.setDescription(req.getDescription());
         List<String> imageUrls = normalizeImageUrls(req.getImageUrls(), req.getImageUrl());
@@ -122,8 +131,10 @@ public class ResourceServiceImpl implements ResourceService {
         resource.setCapacity(req.getCapacity());
         resource.setLocation(req.getLocation());
         resource.setBuilding(req.getBuilding());
-        resource.setAvailabilityStart(req.getAvailabilityStart());
-        resource.setAvailabilityEnd(req.getAvailabilityEnd());
+        List<ResourceAvailabilityWindowDTO> windows = normalizeAvailabilityWindows(req);
+        resource.setAvailabilityStart(primaryOpeningTime(windows));
+        resource.setAvailabilityEnd(primaryClosingTime(windows));
+        resource.setAvailabilityWindows(serializeAvailabilityWindows(windows));
         resource.setStatus(req.getStatus());
         resource.setDescription(req.getDescription());
 
@@ -200,6 +211,7 @@ public class ResourceServiceImpl implements ResourceService {
                 .building(r.getBuilding())
                 .availabilityStart(r.getAvailabilityStart())
                 .availabilityEnd(r.getAvailabilityEnd())
+                .availabilityWindows(allAvailabilityWindows(r))
                 .status(r.getStatus())
                 .description(r.getDescription())
                 .imageUrl(primaryImageUrl(r))
@@ -311,5 +323,97 @@ public class ResourceServiceImpl implements ResourceService {
                 .filter(url -> !url.isBlank())
                 .distinct()
                 .collect(Collectors.toList());
+    }
+
+    private List<ResourceAvailabilityWindowDTO> normalizeAvailabilityWindows(ResourceRequestDTO req) {
+        List<ResourceAvailabilityWindowDTO> source = req.getAvailabilityWindows();
+        if (source == null || source.isEmpty()) {
+            source = List.of(ResourceAvailabilityWindowDTO.builder()
+                    .day("MONDAY")
+                    .openingTime(req.getAvailabilityStart())
+                    .closingTime(req.getAvailabilityEnd())
+                    .build());
+        }
+
+        List<ResourceAvailabilityWindowDTO> windows = source.stream()
+                .filter(Objects::nonNull)
+                .map(window -> ResourceAvailabilityWindowDTO.builder()
+                        .day(normalizeDay(window.getDay()))
+                        .openingTime(trimToNull(window.getOpeningTime()))
+                        .closingTime(trimToNull(window.getClosingTime()))
+                        .build())
+                .filter(window -> window.getDay() != null
+                        && window.getOpeningTime() != null
+                        && window.getClosingTime() != null)
+                .collect(Collectors.toList());
+
+        if (windows.isEmpty()) {
+            throw new IllegalArgumentException("At least one availability window is required");
+        }
+        for (ResourceAvailabilityWindowDTO window : windows) {
+            if (window.getOpeningTime().compareTo(window.getClosingTime()) >= 0) {
+                throw new IllegalArgumentException("Closing time must be later than opening time");
+            }
+        }
+        return windows;
+    }
+
+    private String serializeAvailabilityWindows(List<ResourceAvailabilityWindowDTO> windows) {
+        return windows.stream()
+                .map(window -> String.join(WINDOW_PART_SEPARATOR,
+                        window.getDay(),
+                        window.getOpeningTime(),
+                        window.getClosingTime()))
+                .collect(Collectors.joining(WINDOW_SEPARATOR));
+    }
+
+    private List<ResourceAvailabilityWindowDTO> allAvailabilityWindows(Resource resource) {
+        List<ResourceAvailabilityWindowDTO> windows = parseAvailabilityWindows(resource.getAvailabilityWindows());
+        if (!windows.isEmpty()) {
+            return windows;
+        }
+        if (resource.getAvailabilityStart() != null && resource.getAvailabilityEnd() != null) {
+            return List.of(ResourceAvailabilityWindowDTO.builder()
+                    .day("MONDAY")
+                    .openingTime(resource.getAvailabilityStart())
+                    .closingTime(resource.getAvailabilityEnd())
+                    .build());
+        }
+        return new ArrayList<>();
+    }
+
+    private List<ResourceAvailabilityWindowDTO> parseAvailabilityWindows(String serializedWindows) {
+        if (serializedWindows == null || serializedWindows.trim().isBlank()) {
+            return new ArrayList<>();
+        }
+        return Arrays.stream(serializedWindows.split("\\R"))
+                .map(String::trim)
+                .filter(line -> !line.isBlank())
+                .map(line -> line.split("\\|"))
+                .filter(parts -> parts.length == 3)
+                .map(parts -> ResourceAvailabilityWindowDTO.builder()
+                        .day(normalizeDay(parts[0]))
+                        .openingTime(parts[1].trim())
+                        .closingTime(parts[2].trim())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private String primaryOpeningTime(List<ResourceAvailabilityWindowDTO> windows) {
+        return windows.get(0).getOpeningTime();
+    }
+
+    private String primaryClosingTime(List<ResourceAvailabilityWindowDTO> windows) {
+        return windows.get(0).getClosingTime();
+    }
+
+    private String normalizeDay(String day) {
+        if (day == null) return null;
+        return day.trim().toUpperCase();
+    }
+
+    private String trimToNull(String value) {
+        if (value == null || value.trim().isBlank()) return null;
+        return value.trim();
     }
 }

@@ -5,6 +5,7 @@ import com.university.backend.model.ResourceType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
 import lombok.Data;
 
 import java.util.List;
@@ -40,4 +41,7 @@ public class ResourceRequestDTO {
     private String imageUrl;
 
     private List<String> imageUrls;
+
+    @Valid
+    private List<ResourceAvailabilityWindowDTO> availabilityWindows;
 }

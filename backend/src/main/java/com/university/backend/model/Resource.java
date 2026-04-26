@@ -37,6 +37,9 @@ public class Resource {
 
     private String availabilityEnd;
 
+    @Column(columnDefinition = "TEXT")
+    private String availabilityWindows;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ResourceStatus status;
