@@ -257,6 +257,60 @@ public class BookingServiceImpl implements BookingService {
             .stream().map(this::toDTO).toList();
     }
 
+    @Override
+    public BookingResponseDTO updateBooking(Long bookingId, BookingRequestDTO request, String userEmail) {
+        Booking booking = findBookingById(bookingId);
+
+        if (!booking.getUserEmail().equals(userEmail)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "You can only update your own bookings");
+        }
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Only PENDING bookings can be updated. Current status: " + booking.getStatus());
+        }
+
+        if (!request.getEndTime().isAfter(request.getStartTime())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "End time must be after start time");
+        }
+
+        if (request.getAttendees() != null && booking.getResource().getCapacity() != null
+                && request.getAttendees() > booking.getResource().getCapacity()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Number of attendees (" + request.getAttendees() +
+                ") exceeds resource capacity (" + booking.getResource().getCapacity() + ")");
+        }
+
+        List<Booking> conflicts = bookingRepository.findConflictingBookingsExcluding(
+            booking.getResource().getId(),
+            request.getStartTime(),
+            request.getEndTime(),
+            bookingId
+        );
+        if (!conflicts.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "This time slot conflicts with another approved booking for this resource.");
+        }
+
+        booking.setStartTime(request.getStartTime());
+        booking.setEndTime(request.getEndTime());
+        booking.setPurpose(request.getPurpose());
+        booking.setAttendees(request.getAttendees());
+
+        return toDTO(bookingRepository.save(booking));
+    }
+
+    @Override
+    public void deleteBooking(Long bookingId) {
+        if (!bookingRepository.existsById(bookingId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                "Booking not found with id: " + bookingId);
+        }
+        bookingRepository.deleteById(bookingId);
+    }
+
     // ─── Helpers ────────────────────────────────────────────────────────────────
 
     private Booking findBookingById(Long id) {

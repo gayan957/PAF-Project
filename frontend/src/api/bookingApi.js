@@ -29,3 +29,9 @@ export const getUpcomingBookingsForResource = (resourceId, limit = 10) =>
 
 export const getBookingStats = () =>
     api.get('/v1/bookings/stats');
+
+export const updateBooking = (id, data) =>
+    api.patch(`/v1/bookings/${id}/update`, data);
+
+export const deleteBooking = (id) =>
+    api.patch(`/v1/bookings/${id}/delete`);
