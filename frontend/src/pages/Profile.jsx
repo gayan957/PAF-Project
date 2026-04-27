@@ -345,17 +345,19 @@ const Profile = () => {
             <h4 style={{ margin: '0 0 10px', fontSize: '14px', fontWeight: '800', color: '#334155' }}>
               Account Role
             </h4>
-            <span style={{
-              display: 'inline-block',
-              padding: '4px 10px',
-              borderRadius: '999px',
-              fontSize: '12px',
-              fontWeight: '800',
-              background: user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN' ? '#fef3c7' : '#ccfbf1',
-              color: user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN' ? '#92400e' : '#0f766e',
-            }}>
-              {user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN' ? 'Administrator' : 'Student'}
-            </span>
+            {(() => {
+              const role = user?.role;
+              const isAdmin = role === 'ROLE_ADMIN' || role === 'ADMIN';
+              const isTech  = role === 'ROLE_TECHNICIAN' || role === 'TECHNICIAN';
+              const label   = isAdmin ? 'Administrator' : isTech ? 'Technician' : 'Student';
+              const bg      = isAdmin ? '#fef3c7' : isTech ? '#dbeafe' : '#ccfbf1';
+              const color   = isAdmin ? '#92400e' : isTech ? '#1e40af' : '#0f766e';
+              return (
+                <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: '800', background: bg, color }}>
+                  {label}
+                </span>
+              );
+            })()}
             <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#94a3b8', lineHeight: 1.5 }}>
               Your role determines which actions and pages are available to you.
             </p>
