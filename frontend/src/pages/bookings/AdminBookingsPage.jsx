@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Check, X, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
+import { Check, X, CheckCircle, AlertCircle, Calendar, Trash2 } from 'lucide-react';
 import {
     getAllBookings,
     approveBooking,
     rejectBooking,
     getBookingStats,
+    deleteBooking,
 } from '../../api/bookingApi';
 import './Bookings.css';
 
@@ -105,6 +106,21 @@ const AdminBookingsPage = () => {
             loadStats();
         } catch (err) {
             notify(err.response?.data?.message || 'Failed to reject booking.', 'error');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Permanently delete this booking? This cannot be undone.')) return;
+        setActionLoading(true);
+        try {
+            await deleteBooking(id);
+            notify('Booking deleted.');
+            loadBookings();
+            loadStats();
+        } catch (err) {
+            notify(err.response?.data?.message || 'Failed to delete booking.', 'error');
         } finally {
             setActionLoading(false);
         }
@@ -320,24 +336,44 @@ const AdminBookingsPage = () => {
                                             )}
                                         </td>
                                         <td>
-                                            {b.status === 'PENDING' && (
-                                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                                    <button
-                                                        className="btn-approve"
-                                                        onClick={() => handleApprove(b.id)}
-                                                        disabled={actionLoading}
-                                                    >
-                                                        <Check size={14} /> Approve
-                                                    </button>
-                                                    <button
-                                                        className="btn-reject"
-                                                        onClick={() => { setRejectId(b.id); setRejectReason(''); }}
-                                                        disabled={actionLoading}
-                                                    >
-                                                        <X size={14} /> Reject
-                                                    </button>
-                                                </div>
-                                            )}
+                                            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                                {b.status === 'PENDING' && (
+                                                    <>
+                                                        <button
+                                                            className="btn-approve"
+                                                            onClick={() => handleApprove(b.id)}
+                                                            disabled={actionLoading}
+                                                        >
+                                                            <Check size={14} /> Approve
+                                                        </button>
+                                                        <button
+                                                            className="btn-reject"
+                                                            onClick={() => { setRejectId(b.id); setRejectReason(''); }}
+                                                            disabled={actionLoading}
+                                                        >
+                                                            <X size={14} /> Reject
+                                                        </button>
+                                                    </>
+                                                )}
+                                                <button
+                                                    onClick={() => handleDelete(b.id)}
+                                                    disabled={actionLoading}
+                                                    title="Delete booking"
+                                                    style={{
+                                                        background: '#fef2f2',
+                                                        color: '#dc2626',
+                                                        border: '1px solid #dc2626',
+                                                        borderRadius: '0.5rem',
+                                                        padding: '0.4rem',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                    }}
+                                                >
+                                                    <Trash2 size={15} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 );
