@@ -173,6 +173,34 @@ public class BookingController {
     }
 
     /**
+     * PATCH /api/v1/bookings/{id}/update
+     * Owner can update their own PENDING booking (times, purpose, attendees).
+     */
+    @PatchMapping("/{id}/update")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<BookingResponseDTO>> updateBooking(
+            @PathVariable Long id,
+            @Valid @RequestBody BookingRequestDTO request,
+            @AuthenticationPrincipal Object principal) {
+
+        String email = extractEmail(principal);
+        return ResponseEntity.ok(ApiResponse.success(
+            "Booking updated successfully",
+            bookingService.updateBooking(id, request, email)));
+    }
+
+    /**
+     * PATCH /api/v1/bookings/{id}/delete
+     * Admin permanently deletes a booking record.
+     */
+    @PatchMapping("/{id}/delete")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteBooking(@PathVariable Long id) {
+        bookingService.deleteBooking(id);
+        return ResponseEntity.ok(ApiResponse.success("Booking deleted successfully", null));
+    }
+
+    /**
      * PATCH /api/v1/bookings/{id}/cancel
      * Owner can cancel their own PENDING or APPROVED booking.
      */

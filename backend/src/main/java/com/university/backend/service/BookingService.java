@@ -49,4 +49,10 @@ public interface BookingService {
 
     // BOTH: get next N upcoming approved bookings for a resource (for detail page schedule)
     List<BookingResponseDTO> getUpcomingBookingsForResource(Long resourceId, int limit);
+
+    // USER: update their own PENDING booking
+    BookingResponseDTO updateBooking(Long bookingId, BookingRequestDTO request, String userEmail);
+
+    // ADMIN: permanently delete a booking
+    void deleteBooking(Long bookingId);
 }
