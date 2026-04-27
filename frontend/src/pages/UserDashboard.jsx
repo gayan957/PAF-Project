@@ -10,7 +10,7 @@ import './UserDashboard.css';
 const UserDashboard = () => {
     const { user, checkAuth } = useAuth();
     const [tickets, setTickets] = useState([]);
-    const [stats, setStats] = useState({ active: 0, bookings: 0, courses: 0 });
+    const [activeCount, setActiveCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
 
@@ -19,10 +19,7 @@ const UserDashboard = () => {
             const response = await api.get('/tickets');
             if (response.data && Array.isArray(response.data)) {
                 setTickets(response.data);
-                setStats(prev => ({ 
-                    ...prev, 
-                    active: response.data.filter(t => t.status !== 'RESOLVED').length 
-                }));
+                setActiveCount(response.data.filter(t => t.status !== 'RESOLVED').length);
             } else {
                 setTickets([]);
             }
@@ -35,8 +32,6 @@ const UserDashboard = () => {
 
     useEffect(() => {
         fetchTickets();
-        // Mocking other stats for now
-        setStats(prev => ({ ...prev, bookings: 1, courses: 5 }));
     }, []);
 
 
@@ -58,45 +53,6 @@ const UserDashboard = () => {
                     {/* Optional: we could add a cool illustration here if available */}
                 </div>
 
-                {/* Dashboard Sections */}
-                <div>
-                    <h3 className="section-title">Active Overview</h3>
-                    <div className="cards-row">
-                        {/* Course Card */}
-                        <div className="colored-card card-yellow">
-                            <span className="card-tag">MAT 101</span>
-                            <h3>Mathematics</h3>
-                            <p className="card-subtitle">Enrolled Courses: {stats.courses}</p>
-                            <div className="card-footer">
-                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Updated recently</span>
-                                <button className="card-btn">View</button>
-                            </div>
-                        </div>
-                        
-                        {/* Ticket Card */}
-                        <div className="colored-card card-purple">
-                            <span className="card-tag">SUPPORT</span>
-                            <h3>Active Tickets</h3>
-                            <p className="card-subtitle">Pending Requests: {stats.active}</p>
-                            <div className="card-footer">
-                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Check status</span>
-                                <button className="card-btn">Manage</button>
-                            </div>
-                        </div>
-
-                        {/* Booking Card */}
-                        <div className="colored-card card-pink">
-                            <span className="card-tag">BOOKING</span>
-                            <h3>Facilities</h3>
-                            <p className="card-subtitle">Upcoming Bookings: {stats.bookings}</p>
-                            <div className="card-footer">
-                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Lab 304</span>
-                                <button className="card-btn">Details</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 {/* Tickets List */}
                 <div>
                     <h3 className="section-title">Recent Tickets</h3>
@@ -116,9 +72,9 @@ const UserDashboard = () => {
                     <div className="alert-item">
                         <p><strong>System Update:</strong> The student portal will be undergoing maintenance this Saturday at 2:00 AM.</p>
                     </div>
-                    {stats.active > 0 && (
+                    {activeCount > 0 && (
                         <div className="alert-item" style={{ backgroundColor: '#fff7ed', borderColor: '#f97316' }}>
-                            <p style={{ color: '#c2410c' }}><strong>Action Required:</strong> You have {stats.active} active support tickets that may need your attention.</p>
+                            <p style={{ color: '#c2410c' }}><strong>Action Required:</strong> You have {activeCount} active support tickets that may need your attention.</p>
                         </div>
                     )}
                 </div>

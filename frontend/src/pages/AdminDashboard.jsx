@@ -388,7 +388,7 @@ const AdminDashboard = () => {
 
       {/* ── Ticket list ────────────────────────────────────────────────────── */}
       <div style={{
-        background: '#fff', padding: '24px', borderRadius: '12px',
+        background: '#ffffff', padding: '24px', borderRadius: '0.75rem',
         border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(15,23,42,0.06)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
