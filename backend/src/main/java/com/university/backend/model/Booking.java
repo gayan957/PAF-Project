@@ -51,6 +51,14 @@ public class Booking {
     private String reviewedBy;
     private LocalDateTime reviewedAt;
 
+    // QR Code for check-in (generated when approved)
+    @Column(columnDefinition = "LONGTEXT")
+    private String qrCode;
+
+    // Check-in tracking
+    private Boolean isCheckedIn;
+    private LocalDateTime checkedInAt;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

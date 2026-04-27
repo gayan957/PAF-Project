@@ -114,15 +114,14 @@ const AdminBookingsPage = () => {
 
     const getFilteredBookings = () => {
         if (!selectedDateFilter) return bookings;
-        
+
         const selectedDate = new Date(selectedDateFilter);
         const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 0, 0, 0);
         const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 23, 59, 59);
-        
+
         return bookings.filter(booking => {
             const bookingStart = new Date(booking.startTime);
             const bookingEnd = new Date(booking.endTime);
-            // Show bookings that overlap with the selected date
             return bookingStart < endOfDay && bookingEnd > startOfDay;
         });
     };
