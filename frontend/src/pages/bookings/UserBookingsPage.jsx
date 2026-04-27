@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Users, Clock, Plus, X, CheckCircle, AlertCircle, QrCode, Download, BadgeCheck } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, Plus, X, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '../../api/axios';
-import { getMyBookings, cancelBooking, generateQrCode } from '../../api/bookingApi';
+import { getMyBookings, cancelBooking } from '../../api/bookingApi';
 import BookingFormModal from '../../components/bookings/BookingFormModal';
 import './Bookings.css';
 
@@ -40,7 +40,6 @@ const UserBookingsPage = () => {
     const [locationFilter, setLocationFilter] = useState('');
     const [minCapacity, setMinCapacity]       = useState('');
     const [myStatusFilter, setMyStatusFilter] = useState('');
-    const [qrCodeBookingId, setQrCodeBookingId] = useState(null);
     const [error, setError]                   = useState('');
     const [success, setSuccess]               = useState('');
 
@@ -86,16 +85,6 @@ const UserBookingsPage = () => {
         setSelectedResource(null);
     };
 
-    const handleGenerateQr = async (id) => {
-        try {
-            await generateQrCode(id);
-            await loadAll();
-            setQrCodeBookingId(id);
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to generate QR code.');
-        }
-    };
-
     const handleCancel = async (id) => {
         if (!window.confirm('Cancel this booking?')) return;
         try {
@@ -107,22 +96,9 @@ const UserBookingsPage = () => {
         }
     };
 
-    // Get the selected booking for QR code display
-    const selectedQRBooking = qrCodeBookingId ? myBookings.find(b => b.id === qrCodeBookingId) : null;
-
-    const handleDownloadQR = () => {
-        if (!selectedQRBooking?.qrCode) return;
-        const link = document.createElement('a');
-        link.href = selectedQRBooking.qrCode;
-        link.download = `booking_${selectedQRBooking.id}_qr.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
     const types = [...new Set(resources.map(r => r.type))];
     const minCapacityValue = parseInt(minCapacity, 10);
-    
+
     const filteredResources = resources.filter(resource => {
         const matchesType     = !typeFilter || resource.type === typeFilter;
         const matchesLocation = !locationFilter ||
@@ -211,8 +187,6 @@ const UserBookingsPage = () => {
                             placeholder="Min capacity"
                         />
                     </div>
-
-
 
                     {filteredResources.length === 0 ? (
                         <p className="no-data">No active resources match your filters.</p>
@@ -318,78 +292,15 @@ const UserBookingsPage = () => {
                                                             Reason: {b.rejectionReason}
                                                         </div>
                                                     )}
-                                                    {b.status === 'APPROVED' && b.isCheckedIn && (
-                                                        <div style={{
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            gap: '0.25rem',
-                                                            fontSize: '0.75rem',
-                                                            color: '#15803d',
-                                                            background: '#dcfce7',
-                                                            borderRadius: '999px',
-                                                            padding: '2px 8px',
-                                                            marginTop: 4,
-                                                        }}>
-                                                            <BadgeCheck size={12} /> Checked In
-                                                        </div>
-                                                    )}
                                                 </td>
                                                 <td>
                                                     {(b.status === 'PENDING' || b.status === 'APPROVED') && (
-                                                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                                            {b.status === 'APPROVED' && (
-                                                                b.qrCode ? (
-                                                                    <button
-                                                                        className="btn-qr"
-                                                                        onClick={() => setQrCodeBookingId(b.id)}
-                                                                        title="View check-in QR code"
-                                                                        style={{
-                                                                            background: '#dbeafe',
-                                                                            color: '#0284c7',
-                                                                            border: '1px solid #0284c7',
-                                                                            borderRadius: '0.5rem',
-                                                                            padding: '0.4rem 0.6rem',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: '0.85rem',
-                                                                            fontWeight: '500',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            gap: '0.3rem',
-                                                                            whiteSpace: 'nowrap',
-                                                                        }}
-                                                                    >
-                                                                        <QrCode size={14} /> QR
-                                                                    </button>
-                                                                ) : (
-                                                                    <button
-                                                                        onClick={() => handleGenerateQr(b.id)}
-                                                                        title="Get your check-in QR code"
-                                                                        style={{
-                                                                            background: '#fefce8',
-                                                                            color: '#a16207',
-                                                                            border: '1px solid #ca8a04',
-                                                                            borderRadius: '0.5rem',
-                                                                            padding: '0.4rem 0.6rem',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: '0.85rem',
-                                                                            fontWeight: '500',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            gap: '0.3rem',
-                                                                            whiteSpace: 'nowrap',
-                                                                        }}
-                                                                    >
-                                                                        <QrCode size={14} /> Get QR
-                                                                    </button>
-                                                                )
-                                                            )}
-                                                            <button
-                                                                className="btn-cancel"
-                                                                onClick={() => handleCancel(b.id)}
-                                                            >
-                                                                Cancel
-                                                            </button>
-                                                        </div>
+                                                        <button
+                                                            className="btn-cancel"
+                                                            onClick={() => handleCancel(b.id)}
+                                                        >
+                                                            Cancel
+                                                        </button>
                                                     )}
                                                 </td>
                                             </tr>
@@ -413,93 +324,6 @@ const UserBookingsPage = () => {
                         loadAll();
                     }}
                 />
-            )}
-
-            {/* ── QR Code Modal ── */}
-            {qrCodeBookingId && selectedQRBooking && (
-                <div className="modal-overlay" onClick={() => setQrCodeBookingId(null)}>
-                    <div
-                        className="booking-modal"
-                        style={{ maxWidth: '420px' }}
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div className="modal-header">
-                            <h2>Check-in QR Code</h2>
-                            <button onClick={() => setQrCodeBookingId(null)}><X size={20} /></button>
-                        </div>
-
-                        <div style={{ padding: '1.5rem', textAlign: 'center' }}>
-                            <div style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.9rem' }}>
-                                <strong>Booking #{selectedQRBooking.id}</strong>
-                                <br />
-                                {selectedQRBooking.resourceName}
-                                <br />
-                                {fmt(selectedQRBooking.startTime)} → {fmt(selectedQRBooking.endTime)}
-                            </div>
-
-                            {selectedQRBooking.qrCode && (
-                                <div style={{
-                                    background: '#f8fafc',
-                                    padding: '1rem',
-                                    borderRadius: '0.75rem',
-                                    marginBottom: '1rem',
-                                    display: 'inline-block',
-                                }}>
-                                    <img
-                                        src={selectedQRBooking.qrCode}
-                                        alt="Check-in QR Code"
-                                        style={{
-                                            width: '250px',
-                                            height: '250px',
-                                            border: '3px solid #0284c7',
-                                            borderRadius: '0.5rem',
-                                        }}
-                                    />
-                                </div>
-                            )}
-
-                            {selectedQRBooking.isCheckedIn ? (
-                                <div style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem',
-                                    background: '#dcfce7',
-                                    color: '#15803d',
-                                    borderRadius: '0.5rem',
-                                    padding: '0.5rem 1rem',
-                                    fontWeight: 600,
-                                    fontSize: '0.9rem',
-                                    marginBottom: '1.5rem',
-                                }}>
-                                    <BadgeCheck size={16} /> Checked in at {fmt(selectedQRBooking.checkedInAt)}
-                                </div>
-                            ) : (
-                                <div style={{ color: '#475569', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-                                    Show this QR code at the door to check in for your booking.
-                                </div>
-                            )}
-
-                            <button
-                                onClick={handleDownloadQR}
-                                style={{
-                                    background: '#0284c7',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '0.5rem',
-                                    padding: '0.7rem 1.5rem',
-                                    cursor: 'pointer',
-                                    fontSize: '0.95rem',
-                                    fontWeight: '500',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                }}
-                            >
-                                <Download size={16} /> Download QR Code
-                            </button>
-                        </div>
-                    </div>
-                </div>
             )}
         </div>
     );

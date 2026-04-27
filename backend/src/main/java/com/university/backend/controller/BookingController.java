@@ -220,4 +220,5 @@ public class BookingController {
             .map(u -> u.getName() != null ? u.getName() : email)
             .orElse(email);
     }
+
 }

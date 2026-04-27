@@ -24,6 +24,9 @@ public class BookingResponseDTO {
     private String rejectionReason;
     private String reviewedBy;
     private LocalDateTime reviewedAt;
+    private String qrCode;
+    private Boolean isCheckedIn;
+    private LocalDateTime checkedInAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -29,9 +29,3 @@ export const getUpcomingBookingsForResource = (resourceId, limit = 10) =>
 
 export const getBookingStats = () =>
     api.get('/v1/bookings/stats');
-
-export const checkInBooking = (id) =>
-    api.patch(`/v1/bookings/${id}/checkin`);
-
-export const generateQrCode = (id) =>
-    api.patch(`/v1/bookings/${id}/generate-qr`);
