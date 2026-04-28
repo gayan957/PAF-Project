@@ -47,6 +47,61 @@ const Home = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Footer */}
+            <footer className="home-footer">
+                <div className="footer-container">
+                    {/* Brand column */}
+                    <div className="footer-brand">
+                        <div className="footer-logo">
+                            <div className="shield-icon">
+                                <span>U</span>
+                            </div>
+                            <div className="logo-text">
+                                <span className="brand-name" style={{ color: '#fff' }}>UniPortal</span>
+                                <span className="brand-sub" style={{ color: '#94a3b8' }}>University System</span>
+                            </div>
+                        </div>
+                        <p className="footer-desc">
+                            A unified campus platform for managing facilities, support tickets, and university services — all in one place.
+                        </p>
+                    </div>
+
+                    {/* Quick Links */}
+                    <div className="footer-col">
+                        <h4 className="footer-col-title">Quick Links</h4>
+                        <ul className="footer-links">
+                            <li><a href="/">Home</a></li>
+                            <li><a href="/login">Log In</a></li>
+                            <li><a href="/register">Register</a></li>
+                        </ul>
+                    </div>
+
+                    {/* Services */}
+                    <div className="footer-col">
+                        <h4 className="footer-col-title">Services</h4>
+                        <ul className="footer-links">
+                            <li><a href="/login">Facility Bookings</a></li>
+                            <li><a href="/login">Support Tickets</a></li>
+                            <li><a href="/login">Admin Dashboard</a></li>
+                        </ul>
+                    </div>
+
+                    {/* Contact */}
+                    <div className="footer-col">
+                        <h4 className="footer-col-title">Contact</h4>
+                        <ul className="footer-links footer-contact">
+                            <li>📍 University Campus, Main Road</li>
+                            <li>📧 support@uniportal.edu</li>
+                            <li>📞 +94 11 234 5678</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="footer-bottom">
+                    <p>© {new Date().getFullYear()} UniPortal · University Management System. All rights reserved.</p>
+                </div>
+            </footer>
         </div>
     );
 };
