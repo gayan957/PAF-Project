@@ -1,5 +1,4 @@
 import React from 'react';
-import { Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import NotificationBell from './notifications/NotificationBell';
 import './TopHeader.css';
@@ -9,13 +8,6 @@ const TopHeader = ({ title = "Dashboard" }) => {
 
     return (
         <header className="top-header">
-            <div className="header-left">
-                <div className="search-bar">
-                    <Search size={18} className="search-icon" />
-                    <input type="text" placeholder="Search..." />
-                </div>
-            </div>
-            
             <div className="header-right">
                 <NotificationBell />
                 
