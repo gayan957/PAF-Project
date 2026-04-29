@@ -435,22 +435,24 @@ export default function BookingFormModal({ resource, prefilledDate = '', prefill
                                 </span>
                             </Field>
 
-                            <Field
-                                label={`Number of Attendees${resource.capacity ? ` (max ${resource.capacity})` : ' (optional)'}`}
-                                style={{ marginBottom: '24px' }}
-                            >
-                                <input
-                                    type="number"
-                                    value={attendees}
-                                    onChange={e => setAttendees(e.target.value)}
-                                    min={1}
-                                    max={resource.capacity || undefined}
-                                    placeholder={resource.capacity ? `1 – ${resource.capacity}` : 'Optional'}
-                                    style={inputStyle}
-                                    onFocus={focusInput}
-                                    onBlur={blurInput}
-                                />
-                            </Field>
+                            {resource.type !== 'EQUIPMENT' && (
+                                <Field
+                                    label={`Number of Attendees${resource.capacity ? ` (max ${resource.capacity})` : ' (optional)'}`}
+                                    style={{ marginBottom: '24px' }}
+                                >
+                                    <input
+                                        type="number"
+                                        value={attendees}
+                                        onChange={e => setAttendees(e.target.value)}
+                                        min={1}
+                                        max={resource.capacity || undefined}
+                                        placeholder={resource.capacity ? `1 – ${resource.capacity}` : 'Optional'}
+                                        style={inputStyle}
+                                        onFocus={focusInput}
+                                        onBlur={blurInput}
+                                    />
+                                </Field>
+                            )}
 
                             <div style={{ display: 'flex', gap: '10px' }}>
                                 <button
